@@ -54,39 +54,40 @@
 <body class="h-screen w-screen flex flex-col p-8 box-border">
 
     <header class="flex justify-between items-center mb-8 bg-white/5 backdrop-blur-xl p-6 rounded-3xl border border-white/10 shadow-2xl shrink-0">
+    <header class="flex justify-between items-center mb-6 bg-white/5 backdrop-blur-xl p-5 xl:p-6 rounded-3xl border border-white/10 shadow-2xl shrink-0">
         <div class="flex items-center space-x-6">
-            <div class="bg-gradient-to-br from-green-400 to-emerald-600 p-5 rounded-2xl shadow-lg shadow-green-500/30 flex items-center justify-center">
-                <i class="fas fa-piggy-bank text-5xl text-white"></i>
+            <div class="bg-gradient-to-br from-green-400 to-emerald-600 p-4 xl:p-5 rounded-2xl shadow-lg shadow-green-500/30 flex items-center justify-center">
+                <i class="fas fa-piggy-bank text-4xl xl:text-5xl text-white"></i>
             </div>
             <div>
-                <h1 class="text-4xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-cyan-300 uppercase">Top 10 Penabung</h1>
-                <p class="text-xl text-slate-300 mt-1 font-semibold tracking-wider">Pondok Pesantren Sistem</p>
+                <h1 class="text-3xl xl:text-4xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-cyan-300 uppercase">Top 10 Penabung</h1>
+                <p class="text-lg xl:text-xl text-slate-300 mt-1 font-semibold tracking-wider">Pondok Pesantren Sistem</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end">
-            <div id="clockDisplay" class="text-6xl font-black font-mono tracking-widest drop-shadow-lg text-white">00:00:00</div>
-            <div id="dateDisplay" class="text-lg text-slate-300 mt-2 uppercase tracking-[0.2em] font-bold">Memuat Tanggal...</div>
-            <div id="syncStatus" class="text-sm font-medium text-emerald-400 mt-2 bg-emerald-900/40 px-3 py-1 rounded-full border border-emerald-500/30">
+            <div id="clockDisplay" class="text-5xl xl:text-6xl font-black font-mono tracking-widest drop-shadow-lg text-white">00:00:00</div>
+            <div id="dateDisplay" class="text-base xl:text-lg text-slate-300 mt-2 uppercase tracking-[0.2em] font-bold">Memuat Tanggal...</div>
+            <div id="syncStatus" class="text-xs xl:text-sm font-medium text-emerald-400 mt-2 bg-emerald-900/40 px-3 py-1 rounded-full border border-emerald-500/30">
                 <i class="fas fa-sync-alt fa-spin mr-2"></i>Menyambungkan...
             </div>
         </div>
     </header>
 
-    <main class="flex-1 flex gap-8 h-full min-h-0 overflow-hidden">
+    <main class="flex-1 flex gap-6 xl:gap-8 h-full min-h-0 overflow-hidden pb-2">
         
-        <!-- KOLOM KIRI: Top 3 (Diperbesar untuk Landscape TV) -->
-        <div class="w-1/2 flex flex-col gap-6" id="topThreeContainer">
+        <!-- KOLOM KIRI: Top 3 (Menggunakan Grid agar tinggi dibagi rata) -->
+        <div class="w-1/2 grid grid-rows-3 gap-4 xl:gap-6" id="topThreeContainer">
             <!-- Loading State -->
-            <div class="h-full flex flex-col items-center justify-center bg-white/5 rounded-3xl animate-pulse border border-white/5">
+            <div class="h-full flex flex-col items-center justify-center bg-white/5 rounded-3xl animate-pulse border border-white/5 row-span-3">
                 <i class="fas fa-spinner fa-spin text-7xl text-slate-500 mb-4"></i>
                 <p class="text-slate-400 font-medium tracking-widest uppercase">Memuat Juara...</p>
             </div>
         </div>
 
-        <!-- KOLOM KANAN: Peringkat 4 - 10 (Daftar List) -->
-        <div class="w-1/2 flex flex-col gap-4 justify-between" id="topOthersContainer">
+        <!-- KOLOM KANAN: Peringkat 4 - 10 (Menggunakan Grid 7 baris agar PASTI muat) -->
+        <div class="w-1/2 grid grid-rows-7 gap-3 xl:gap-4" id="topOthersContainer">
             <!-- Loading State -->
-            <div class="h-full flex items-center justify-center bg-white/5 rounded-3xl animate-pulse border border-white/5">
+            <div class="h-full flex items-center justify-center bg-white/5 rounded-3xl animate-pulse border border-white/5 row-span-7">
                 <p class="text-slate-400 font-medium tracking-widest uppercase">Memuat Daftar...</p>
             </div>
         </div>
@@ -95,7 +96,6 @@
 
     <script>
         // --- KONFIGURASI ---
-        // MASUKKAN URL APPS SCRIPT ANDA DI SINI
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0jQYSSfrN2dD8Wb4kaul0eItZ5tEG5jHO-6yN_UXnSHDxyif0adevn_fhudLBJmYB4w/exec';
         
         const formatNumber = (angka) => {
@@ -140,8 +140,7 @@
             containerRight.innerHTML = '';
 
             if (top10.length === 0) {
-                containerLeft.innerHTML = `<div class="h-full flex items-center justify-center text-slate-400 text-3xl font-light">Belum ada data tabungan</div>`;
-                containerRight.innerHTML = '';
+                containerLeft.innerHTML = `<div class="h-full flex items-center justify-center text-slate-400 text-3xl font-light row-span-3">Belum ada data tabungan</div>`;
                 return;
             }
 
@@ -151,39 +150,36 @@
                 // --- RENDER TOP 3 ---
                 if (rank <= 3) {
                     let rankClass = rank === 1 ? 'rank-1' : (rank === 2 ? 'rank-2' : 'rank-3');
-                    // Ganti warna teks khusus untuk perak (rank 2) agar kontrasnya pas
                     let textColor = rank === 2 ? 'text-slate-800' : 'text-white';
                     let subTextColor = rank === 2 ? 'text-slate-700' : 'text-white/90';
                     let iconColor = rank === 1 ? 'text-yellow-100' : (rank === 2 ? 'text-slate-100' : 'text-orange-100');
                     let iconType = rank === 1 ? 'fa-trophy' : 'fa-medal';
                     let delay = index * 0.2; 
 
-                    // Layout Vertikal (atas-bawah) agar nama panjang tidak mendesak nominal uang
                     containerLeft.innerHTML += `
-                        <div class="flex-1 ${rankClass} rounded-3xl p-6 flex items-center animate-top3 relative overflow-hidden" style="animation-delay: ${delay}s">
+                        <div class="w-full h-full ${rankClass} rounded-3xl p-5 xl:p-6 flex items-center animate-top3 relative overflow-hidden shadow-2xl" style="animation-delay: ${delay}s">
                             <!-- Watermark Background -->
                             <i class="fas ${iconType} watermark-icon ${iconColor}"></i>
                             
                             <!-- Nomor Rank Besar -->
-                            <div class="text-[6rem] font-black italic drop-shadow-xl w-32 shrink-0 ${textColor} opacity-95">
+                            <div class="text-[5rem] xl:text-[6rem] font-black italic drop-shadow-xl w-24 xl:w-32 shrink-0 text-center ${textColor} opacity-95">
                                 #${rank}
                             </div>
                             
-                            <!-- Kontainer Teks (Nama & Uang disusun atas-bawah) -->
-                            <div class="flex-1 min-w-0 border-l-4 ${rank === 2 ? 'border-slate-400/50' : 'border-white/30'} pl-8 flex flex-col justify-center z-10">
-                                
+                            <!-- Kontainer Teks: Garis Vertikal Dihapus, diganti margin kiri -->
+                            <div class="flex-1 min-w-0 flex flex-col justify-center z-10 ml-2 xl:ml-4">
                                 <!-- Nama Siswa -->
-                                <h2 class="text-3xl lg:text-4xl 2xl:text-5xl font-black uppercase tracking-wide truncate drop-shadow-md ${textColor}" title="${siswa.nama}">
+                                <h2 class="text-2xl xl:text-3xl 2xl:text-4xl font-black uppercase tracking-wide truncate drop-shadow-md ${textColor}" title="${siswa.nama}">
                                     ${siswa.nama}
                                 </h2>
                                 
                                 <!-- Kelas -->
-                                <div class="text-lg lg:text-xl font-bold mt-2 mb-4 flex items-center ${subTextColor} tracking-widest">
-                                    <i class="fas fa-graduation-cap mr-3 opacity-75"></i> KELAS ${siswa.kelas}
+                                <div class="text-base xl:text-lg font-bold mt-1 mb-2 xl:mb-3 flex items-center ${subTextColor} tracking-widest uppercase">
+                                    <i class="fas fa-graduation-cap mr-2 opacity-75"></i> Kelas ${siswa.kelas}
                                 </div>
                                 
                                 <!-- Nominal Uang -->
-                                <div class="text-4xl lg:text-5xl 2xl:text-6xl font-black tracking-tighter drop-shadow-xl ${textColor}">
+                                <div class="text-4xl xl:text-5xl 2xl:text-6xl font-black tracking-tighter drop-shadow-xl ${textColor}">
                                     Rp ${formatNumber(siswa.tabungan)}
                                 </div>
                             </div>
@@ -195,24 +191,24 @@
                     let delay = (index - 3) * 0.15;
                     
                     containerRight.innerHTML += `
-                        <div class="rank-other rounded-2xl p-4 flex items-center justify-between animate-list shadow-lg flex-1" style="animation-delay: ${delay}s">
-                            <div class="flex items-center flex-1 min-w-0">
+                        <div class="w-full h-full rank-other rounded-2xl px-5 py-3 flex items-center justify-between animate-list shadow-sm" style="animation-delay: ${delay}s">
+                            <div class="flex items-center flex-1 min-w-0 gap-4 xl:gap-5">
                                 <!-- Nomor Rank -->
-                                <div class="text-3xl font-black text-slate-500 w-16 shrink-0 text-center italic">#${rank}</div>
+                                <div class="text-2xl xl:text-3xl font-black text-slate-500 w-12 xl:w-16 shrink-0 text-center italic">#${rank}</div>
                                 
-                                <!-- Garis Pemisah & Info Santri -->
-                                <div class="flex-1 min-w-0 border-l-2 border-slate-700 pl-5 pr-4 flex flex-col justify-center">
+                                <!-- Garis Vertikal Dihapus -->
+                                <div class="flex-1 min-w-0 flex flex-col justify-center">
                                     <!-- Nama (Bisa memanjang dan terpotong pakai ... jika terlalu panjang) -->
-                                    <h3 class="text-xl 2xl:text-2xl font-bold text-white uppercase tracking-wider truncate drop-shadow-sm" title="${siswa.nama}">
+                                    <h3 class="text-lg xl:text-xl 2xl:text-2xl font-bold text-white uppercase tracking-wider truncate drop-shadow-sm" title="${siswa.nama}">
                                         ${siswa.nama}
                                     </h3>
                                     <!-- Kelas -->
-                                    <p class="text-sm 2xl:text-base text-slate-400 font-semibold mt-0.5 tracking-widest">KELAS ${siswa.kelas}</p>
+                                    <p class="text-xs xl:text-sm text-slate-400 font-semibold mt-0.5 tracking-widest uppercase">Kelas ${siswa.kelas}</p>
                                 </div>
                             </div>
                             
                             <!-- Nominal Uang List -->
-                            <div class="shrink-0 text-2xl 2xl:text-3xl font-black text-emerald-400 tracking-wider bg-emerald-900/30 px-6 py-2 rounded-xl border border-emerald-500/20 shadow-inner">
+                            <div class="shrink-0 text-xl xl:text-2xl 2xl:text-3xl font-black text-emerald-400 tracking-wider bg-emerald-900/30 px-4 xl:px-6 py-2 rounded-xl border border-emerald-500/20 shadow-inner ml-4">
                                 Rp ${formatNumber(siswa.tabungan)}
                             </div>
                         </div>
