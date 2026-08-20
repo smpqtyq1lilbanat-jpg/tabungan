@@ -39,30 +39,32 @@
         .rank-3 { background: linear-gradient(135deg, #fdba74 0%, #c2410c 100%); box-shadow: 0 15px 35px -5px rgba(194, 65, 12, 0.5); }
         
         /* Warna Rank 4-10 */
-        .rank-other { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); backdrop-filter: blur(12px); }
+        .rank-other { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(12px); }
         
         /* Watermark Piala */
         .watermark-icon {
             position: absolute;
             right: -5%;
             bottom: -15%;
-            font-size: 15rem;
+            font-size: 18rem;
             opacity: 0.15;
             pointer-events: none;
             z-index: 0;
         }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col p-6 xl:p-8 box-border gap-6">
+<body class="h-screen w-screen flex flex-col p-8 box-border gap-8">
 
-    <header class="w-full flex justify-between items-center bg-white/5 backdrop-blur-xl p-6 rounded-3xl border border-white/10 shadow-2xl shrink-0">
+    <!-- HEADER -->
+    <header class="w-full flex justify-between items-center bg-white/5 backdrop-blur-xl p-8 rounded-[2rem] border border-white/10 shadow-2xl shrink-0">
         <div class="flex items-center space-x-6">
-            <div class="bg-gradient-to-br from-green-400 to-emerald-600 p-5 rounded-2xl shadow-lg flex items-center justify-center">
+            <div class="bg-gradient-to-br from-green-400 to-emerald-600 p-5 rounded-3xl shadow-xl flex items-center justify-center">
                 <i class="fas fa-piggy-bank text-5xl text-white"></i>
             </div>
             <div>
-                <h1 class="text-4xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-cyan-300 uppercase">Top 10 Penabung</h1>
-                <p class="text-xl text-slate-300 mt-1 font-semibold tracking-wider">Pondok Pesantren Sistem</p>
+                <!-- ID ditambahkan agar JS bisa mengganti teks saat transisi -->
+                <h1 id="mainTitle" class="text-5xl font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-cyan-300 uppercase transition-opacity duration-500">TOP 10 PENABUNG</h1>
+                <p id="subTitle" class="text-xl text-slate-300 mt-2 font-semibold tracking-wider transition-opacity duration-500">Kategori Individu Santri</p>
             </div>
         </div>
         <div class="text-right flex flex-col items-end">
@@ -74,21 +76,20 @@
         </div>
     </header>
 
-    <main class="w-full flex-1 min-h-0 grid grid-cols-2 gap-8">
+    <!-- MAIN GRID KIRI & KANAN (Tetap sama, grid dijamin rapi) -->
+    <main class="w-full flex-1 min-h-0 flex gap-8">
         
-        <!-- KOLOM KIRI: Top 3 -->
-        <div class="grid grid-rows-3 gap-6" id="topThreeContainer">
+        <!-- KOLOM KIRI: Top 3 (Lebar 50%) -->
+        <div class="w-1/2 grid grid-rows-3 gap-6" id="topThreeContainer">
             <div class="h-full flex flex-col items-center justify-center bg-white/5 rounded-3xl animate-pulse border border-white/5 row-span-3">
                 <i class="fas fa-spinner fa-spin text-7xl text-slate-500 mb-4"></i>
-                <p class="text-slate-400 font-medium tracking-widest uppercase">Memuat Juara...</p>
+                <p class="text-slate-400 font-medium tracking-widest uppercase text-xl">Mempersiapkan Papan Skor...</p>
             </div>
         </div>
 
-        <!-- KOLOM KANAN: Peringkat 4 - 10 -->
-        <div class="grid grid-rows-7 gap-4" id="topOthersContainer">
-            <div class="h-full flex items-center justify-center bg-white/5 rounded-3xl animate-pulse border border-white/5 row-span-7">
-                <p class="text-slate-400 font-medium tracking-widest uppercase">Memuat Daftar...</p>
-            </div>
+        <!-- KOLOM KANAN: Peringkat 4 - 10 (Lebar 50%) -->
+        <div class="w-1/2 grid grid-rows-7 gap-4" id="topOthersContainer">
+            <!-- Loading ditahan sementara -->
         </div>
 
     </main>
@@ -101,6 +102,10 @@
             return new Intl.NumberFormat('id-ID').format(angka);
         };
 
+        // State untuk melacak tampilan mana yang sedang aktif
+        let currentView = 'siswa'; 
+        let isFirstLoad = true;
+
         function fetchLeaderboard() {
             const syncStatus = document.getElementById('syncStatus');
             syncStatus.innerHTML = '<i class="fas fa-sync-alt fa-spin mr-2"></i>Memperbarui data...';
@@ -110,7 +115,13 @@
                 .then(res => res.json())
                 .then(response => {
                     if (response.status === 'success') {
-                        renderLeaderboard(response.data);
+                        // Tukar tampilan setiap kali data sukses ditarik (kecuali baru pertama buka TV)
+                        if (!isFirstLoad) {
+                            currentView = currentView === 'siswa' ? 'kelas' : 'siswa';
+                        }
+                        isFirstLoad = false;
+                        
+                        renderView(response.data);
                         
                         const now = new Date();
                         const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(/\./g, ':');
@@ -127,11 +138,55 @@
                 });
         }
 
-        function renderLeaderboard(dataSiswa) {
-            // Sort data descending by tabungan
-            const sortedData = dataSiswa.sort((a, b) => b.tabungan - a.tabungan);
-            const top10 = sortedData.slice(0, 10);
+        function renderView(dataSiswa) {
+            const mainTitle = document.getElementById('mainTitle');
+            const subTitle = document.getElementById('subTitle');
             
+            // 1. Pudar (Fade Out) Header terlebih dahulu
+            mainTitle.style.opacity = '0';
+            subTitle.style.opacity = '0';
+            
+            setTimeout(() => {
+                // 2. Ganti Teks & Gambar Kartu sesuai mode
+                if (currentView === 'siswa') {
+                    mainTitle.textContent = "TOP 10 PENABUNG";
+                    subTitle.textContent = "Kategori Individu Santri";
+                    
+                    // Sort data siswa murni
+                    const top10 = [...dataSiswa].sort((a, b) => b.tabungan - a.tabungan).slice(0, 10);
+                    drawCards(top10, 'siswa');
+                } else {
+                    mainTitle.textContent = "PERINGKAT KELAS";
+                    subTitle.textContent = "Akumulasi Tabungan Tertinggi per Kelas";
+                    
+                    // Hitung akumulasi tabungan per kelas
+                    const kelasMap = {};
+                    dataSiswa.forEach(s => {
+                        let k = s.kelas.trim().toUpperCase();
+                        if(k) {
+                            if(!kelasMap[k]) kelasMap[k] = 0;
+                            kelasMap[k] += s.tabungan;
+                        }
+                    });
+                    
+                    // Format ulang array untuk digambar
+                    const arrayKelas = Object.keys(kelasMap).map(k => ({
+                        nama: k.startsWith('KELAS') ? k : 'KELAS ' + k, // Paksa ada kata "KELAS"
+                        kelas: 'Total Tabungan Kelas',
+                        tabungan: kelasMap[k]
+                    }));
+                    
+                    const top10Kelas = arrayKelas.sort((a, b) => b.tabungan - a.tabungan).slice(0, 10);
+                    drawCards(top10Kelas, 'kelas');
+                }
+                
+                // 3. Munculkan kembali (Fade In)
+                mainTitle.style.opacity = '1';
+                subTitle.style.opacity = '1';
+            }, 400); // Tunggu 400ms biar animasinya terasa elegan
+        }
+
+        function drawCards(top10, tipe) {
             const containerLeft = document.getElementById('topThreeContainer');
             const containerRight = document.getElementById('topOthersContainer');
             
@@ -139,12 +194,15 @@
             containerRight.innerHTML = '';
 
             if (top10.length === 0) {
-                containerLeft.innerHTML = `<div class="h-full flex items-center justify-center text-slate-400 text-3xl font-light row-span-3">Belum ada data tabungan</div>`;
+                containerLeft.innerHTML = `<div class="h-full flex items-center justify-center text-slate-400 text-3xl font-light row-span-3 w-full">Belum ada data</div>`;
                 return;
             }
 
-            top10.forEach((siswa, index) => {
+            top10.forEach((item, index) => {
                 const rank = index + 1;
+                // Sesuaikan Ikon dan Subtitle jika view Kelas atau Siswa
+                let subIcon = tipe === 'siswa' ? 'fa-graduation-cap' : 'fa-users';
+                let subtitleText = tipe === 'siswa' ? `Kelas ${item.kelas}` : `${item.kelas}`;
                 
                 // --- RENDER TOP 3 (KOLOM KIRI) ---
                 if (rank <= 3) {
@@ -156,25 +214,25 @@
                     let delay = index * 0.2; 
 
                     containerLeft.innerHTML += `
-                        <div class="w-full h-full ${rankClass} rounded-3xl p-6 flex flex-row items-center animate-top3 relative overflow-hidden shadow-2xl" style="animation-delay: ${delay}s">
+                        <div class="w-full h-full ${rankClass} rounded-3xl p-8 flex flex-row items-center animate-top3 relative overflow-hidden shadow-2xl" style="animation-delay: ${delay}s">
                             <!-- Watermark -->
                             <i class="fas ${iconType} watermark-icon ${iconColor}"></i>
                             
-                            <!-- Nomor Rank -->
-                            <div class="text-5xl font-black italic drop-shadow-xl w-20 shrink-0 text-center flex items-center justify-center ${textColor}">
+                            <!-- Nomor Rank (Diperkecil & Presisi Tengah) -->
+                            <div class="text-5xl font-black italic drop-shadow-xl w-20 shrink-0 flex items-center justify-center ${textColor}">
                                 #${rank}
                             </div>
                             
-                            <!-- Detail Nama & Uang -->
-                            <div class="flex-1 min-w-0 flex flex-col justify-center pl-5 border-l-2 border-white/10 z-10">
-                                <h2 class="text-2xl 2xl:text-3xl font-black uppercase truncate drop-shadow-md ${textColor}" title="${siswa.nama}">
-                                    ${siswa.nama}
-                               </h2>
-                                <div class="text-lg font-bold mt-1 mb-3 flex items-center ${subTextColor} tracking-widest uppercase">
-                                    <i class="fas fa-graduation-cap mr-2 opacity-75"></i> Kelas ${siswa.kelas}
+                            <!-- Detail Nama & Uang (Diberi Batas & Ditumpuk Bawah) -->
+                            <div class="flex-1 min-w-0 flex flex-col justify-center pl-6 border-l-2 border-white/20 z-10">
+                                <h2 class="text-4xl font-black uppercase truncate drop-shadow-md ${textColor}" title="${item.nama}">
+                                    ${item.nama}
+                                </h2>
+                                <div class="text-xl font-bold mt-1 flex items-center ${subTextColor} tracking-widest uppercase">
+                                    <i class="fas ${subIcon} mr-2 opacity-75"></i> ${subtitleText}
                                 </div>
-                                <div class="text-5xl font-black tracking-tighter drop-shadow-xl ${textColor}">
-                                    Rp ${formatNumber(siswa.tabungan)}
+                                <div class="text-6xl font-black tracking-tighter drop-shadow-xl mt-4 ${textColor}">
+                                    Rp ${formatNumber(item.tabungan)}
                                 </div>
                             </div>
                         </div>
@@ -190,17 +248,17 @@
                             <!-- Rank & Nama -->
                             <div class="flex items-center flex-1 min-w-0">
                                 <div class="text-3xl font-black text-slate-500 w-16 shrink-0 italic">#${rank}</div>
-                                <div class="flex-1 min-w-0 flex flex-col justify-center pl-4">
-                                    <h3 class="text-xl font-bold text-white uppercase tracking-wider truncate drop-shadow-sm" title="${siswa.nama}">
-                                        ${siswa.nama}
+                                <div class="flex-1 min-w-0 flex flex-col justify-center pl-4 border-l border-white/5">
+                                    <h3 class="text-2xl font-bold text-white uppercase tracking-wider truncate drop-shadow-sm" title="${item.nama}">
+                                        ${item.nama}
                                     </h3>
-                                    <p class="text-sm text-slate-400 font-semibold mt-0.5 tracking-widest uppercase">Kelas ${siswa.kelas}</p>
+                                    <p class="text-sm text-slate-400 font-semibold mt-0.5 tracking-widest uppercase"><i class="fas ${subIcon} mr-1.5 opacity-75"></i>${subtitleText}</p>
                                 </div>
                             </div>
                             
                             <!-- Kotak Uang -->
-                            <div class="shrink-0 text-2xl font-black text-emerald-400 tracking-wider bg-emerald-900/30 px-5 py-2 rounded-xl border border-emerald-500/20 shadow-inner ml-4">
-                                Rp ${formatNumber(siswa.tabungan)}
+                            <div class="shrink-0 text-2xl font-black text-emerald-400 tracking-wider bg-emerald-900/30 px-5 py-2.5 rounded-xl border border-emerald-500/20 shadow-inner ml-4">
+                                Rp ${formatNumber(item.tabungan)}
                             </div>
                         </div>
                     `;
@@ -213,14 +271,18 @@
             const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
             document.getElementById('clockDisplay').innerText = timeStr.replace(/\./g, ':'); 
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('dateDisplay').innerText = now.toLocaleDateString('id-ID', options);
+            document.getElementById('dateDisplay').innerText = now.toLocaleDateString('id-ID', options).toUpperCase();
         }
 
         window.onload = () => {
             updateClock();
             setInterval(updateClock, 1000);
+            
+            // Tarik data saat pertama kali buka
             fetchLeaderboard();
-            setInterval(fetchLeaderboard, 60000); // Auto update tiap 1 menit
+            
+            // Auto update server & ganti view OTOMATIS TIAP 30 DETIK
+            setInterval(fetchLeaderboard, 30000); 
         };
     </script>
 </body>
