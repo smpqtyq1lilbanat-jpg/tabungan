@@ -98,8 +98,23 @@
         // --- GANTI DENGAN URL APPS SCRIPT ANDA ---
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0jQYSSfrN2dD8Wb4kaul0eItZ5tEG5jHO-6yN_UXnSHDxyif0adevn_fhudLBJmYB4w/exec';
         
-        const formatNumber = (angka) => {
-            return new Intl.NumberFormat('id-ID').format(angka);
+        const formatNumber = (angka, isMasked) => {
+            if (angka === 0 || !angka) return "0";
+            // Format angka ke format ribuan dulu (misal: 66.000)
+            const str = new Intl.NumberFormat('id-ID').format(angka);
+            
+            // Tampilkan angka aslinya secara utuh jika mode sensor dimatikan (untuk Kelas)
+            if (!isMasked) return str;
+            
+            // Ambil karakter pertama (angka paling depan)
+            let masked = str.charAt(0);
+            
+            // Loop sisa karakternya, jika itu angka ganti dengan 'X', jika titik biarkan
+            for (let i = 1; i < str.length; i++) {
+                masked += (/[0-9]/.test(str[i])) ? 'X' : str[i];
+            }
+            
+            return masked;
         };
 
         // State untuk melacak tampilan mana yang sedang aktif
@@ -232,7 +247,7 @@
                                     <i class="fas ${subIcon} mr-2 opacity-75"></i> ${subtitleText}
                                 </div>
                                 <div class="text-6xl font-black tracking-tighter drop-shadow-xl mt-4 ${textColor}">
-                                    Rp ${formatNumber(item.tabungan)}
+                                    Rp ${formatNumber(item.tabungan, tipe === 'siswa')}
                                 </div>
                             </div>
                         </div>
@@ -258,7 +273,7 @@
                             
                             <!-- Kotak Uang -->
                             <div class="shrink-0 text-2xl font-black text-emerald-400 tracking-wider bg-emerald-900/30 px-5 py-2.5 rounded-xl border border-emerald-500/20 shadow-inner ml-4">
-                                Rp ${formatNumber(item.tabungan)}
+                                Rp ${formatNumber(item.tabungan, tipe === 'siswa')}
                             </div>
                         </div>
                     `;
