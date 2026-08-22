@@ -4,92 +4,180 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leaderboard Tabungan Santri</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font dan Ikon tetap dibiarkan -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800;900&display=swap" rel="stylesheet">
+    
+    <!-- CSS MURNI (Dijamin Jalan di Smart TV) -->
     <style>
+        /* Reset Dasar */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
         body {
             font-family: 'Poppins', sans-serif;
-            background: #0f172a; /* Fallback solid color */
-            background: radial-gradient(circle at top right, #1e1b4b, #0f172a 70%); 
+            background-color: #0f172a; 
             color: white;
+            height: 100vh;
+            width: 100vw;
             overflow: hidden; 
-        }
-        
-        /* Animasi Masuk (Disederhanakan untuk TV lambat) */
-        @keyframes slideInRight {
-            from { opacity: 0; transform: translateX(20px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-        @keyframes scaleUp {
-            from { opacity: 0; transform: scale(0.98); }
-            to { opacity: 1; transform: scale(1); }
-        }
-        .animate-list {
-            animation: slideInRight 0.5s ease-out forwards;
-            opacity: 0;
-        }
-        .animate-top3 {
-            animation: scaleUp 0.5s ease-out forwards;
-            opacity: 0;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            gap: 20px;
         }
 
-        /* Warna Top 3 (Aman untuk TV Lama) */
-        .rank-1 { background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); }
-        .rank-2 { background: linear-gradient(135deg, #e5e7eb 0%, #9ca3af 100%); }
-        .rank-3 { background: linear-gradient(135deg, #fdba74 0%, #c2410c 100%); }
-        
-        /* Warna Rank 4-10 (Tanpa backdrop-blur yang bikin error) */
-        .rank-other { background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(255, 255, 255, 0.05); }
-        
-        /* Watermark Piala */
-        .watermark-icon {
-            position: absolute;
-            right: -5%;
-            bottom: -15%;
-            font-size: 16rem;
-            opacity: 0.15;
-            pointer-events: none;
-            z-index: 0;
+        /* --- HEADER --- */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #1e293b;
+            padding: 20px 30px;
+            border-radius: 20px;
+            border: 2px solid #334155;
+            flex-shrink: 0;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
         }
+        .header-left { display: flex; align-items: center; gap: 20px; }
+        .header-icon {
+            background: linear-gradient(135deg, #34d399 0%, #059669 100%);
+            padding: 15px 20px;
+            border-radius: 15px;
+            font-size: 2.5rem;
+            color: white;
+        }
+        .header-title { font-size: 2.2rem; font-weight: 900; color: #6ee7b7; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 5px; line-height: 1;}
+        .header-subtitle { font-size: 1.1rem; color: #cbd5e1; font-weight: 600; letter-spacing: 1px;}
+        .header-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
+        .clock { font-size: 3rem; font-weight: 900; font-family: monospace; line-height: 1; letter-spacing: 2px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);}
+        .date { font-size: 0.9rem; color: #cbd5e1; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px;}
+        .sync-badge { font-size: 0.8rem; font-weight: bold; padding: 5px 12px; border-radius: 20px; margin-top: 10px; display: inline-block;}
+        .sync-ok { background-color: rgba(6, 78, 59, 0.5); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
+
+        /* --- LAYOUT UTAMA (KIRI KANAN) --- */
+        .main-container {
+            display: flex;
+            flex: 1;
+            gap: 20px;
+            min-height: 0; /* Penting untuk flexbox overflow */
+        }
+        .col-left, .col-right {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* --- KARTU JUARA 1, 2, 3 (KIRI) --- */
+        .card-top {
+            flex: 1; /* Membagi tinggi rata */
+            display: flex;
+            align-items: center;
+            padding: 0 30px;
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 15px rgba(0,0,0,0.3);
+        }
+        /* Warna Medali */
+        .bg-gold { background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); color: white; }
+        .bg-silver { background: linear-gradient(135deg, #e5e7eb 0%, #9ca3af 100%); color: #1e293b; }
+        .bg-bronze { background: linear-gradient(135deg, #fdba74 0%, #c2410c 100%); color: white; }
+        
+        .watermark {
+            position: absolute;
+            right: -20px;
+            bottom: -40px;
+            font-size: 15rem;
+            opacity: 0.15;
+            z-index: 1;
+        }
+        .bg-gold .watermark { color: #fef3c7; }
+        .bg-silver .watermark { color: #f1f5f9; }
+        .bg-bronze .watermark { color: #ffedd5; }
+
+        .top-rank { font-size: 4rem; font-weight: 900; font-style: italic; width: 80px; z-index: 2; text-shadow: 2px 2px 5px rgba(0,0,0,0.2);}
+        .top-details { flex: 1; z-index: 2; border-left: 2px solid rgba(255,255,255,0.3); padding-left: 25px; overflow: hidden; }
+        .bg-silver .top-details { border-left-color: rgba(0,0,0,0.1); }
+        
+        .top-name { font-size: 2.2rem; font-weight: 900; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; margin-bottom: 5px; }
+        .top-class { font-size: 1rem; font-weight: bold; text-transform: uppercase; opacity: 0.9; margin-bottom: 5px;}
+        .top-amount { font-size: 2.8rem; font-weight: 900; line-height: 1; text-shadow: 2px 2px 5px rgba(0,0,0,0.2);}
+
+        /* --- KARTU JUARA 4-10 (KANAN) --- */
+        .card-list {
+            flex: 1; /* Membagi tinggi rata */
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #1e293b;
+            padding: 0 20px;
+            border-radius: 12px;
+            border: 1px solid #334155;
+        }
+        .list-left { display: flex; align-items: center; flex: 1; overflow: hidden; }
+        .list-rank { font-size: 1.5rem; font-weight: 900; font-style: italic; color: #64748b; width: 45px; }
+        .list-details { flex: 1; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px; overflow: hidden; }
+        .list-name { font-size: 1.1rem; font-weight: 800; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: white; margin-bottom: 2px;}
+        .list-class { font-size: 0.75rem; font-weight: bold; text-transform: uppercase; color: #94a3b8; }
+        
+        .list-amount {
+            font-size: 1.2rem;
+            font-weight: 900;
+            color: #34d399;
+            background-color: #0f172a;
+            padding: 8px 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(52, 211, 153, 0.2);
+            margin-left: 15px;
+            flex-shrink: 0;
+        }
+
+        /* Loading View */
+        .loading-box { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: #1e293b; border-radius: 20px; border: 2px solid #334155;}
+        .loading-box i { font-size: 4rem; color: #64748b; margin-bottom: 20px; }
+        .loading-box p { font-size: 1.5rem; color: #94a3b8; font-weight: bold; text-transform: uppercase; }
+
+        /* Animasi */
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-in { animation: fadeIn 0.4s ease-out forwards; opacity: 0; }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col p-6 box-border gap-6">
+<body>
 
-    <!-- HEADER (Solid Background instead of Blur) -->
-    <header class="w-full flex justify-between items-center bg-slate-800 p-6 rounded-[2rem] border border-slate-700 shadow-xl shrink-0">
-        <div class="flex items-center space-x-6">
-            <div class="bg-gradient-to-br from-emerald-400 to-emerald-600 p-4 rounded-3xl flex items-center justify-center">
-                <i class="fas fa-piggy-bank text-5xl text-white drop-shadow-md"></i>
-            </div>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-left">
+            <div class="header-icon"><i class="fas fa-piggy-bank"></i></div>
             <div>
-                <h1 id="mainTitle" class="text-4xl lg:text-5xl font-black tracking-widest text-emerald-300 uppercase transition-opacity duration-500">TOP 10 PENABUNG</h1>
-                <p id="subTitle" class="text-lg lg:text-xl text-slate-300 mt-1 font-semibold tracking-wider transition-opacity duration-500">Pondok Pesantren Sistem</p>
+                <h1 id="mainTitle" class="header-title">TOP 10 PENABUNG</h1>
+                <p id="subTitle" class="header-subtitle">Peringkat Individu Santri</p>
             </div>
         </div>
-        <div class="text-right flex flex-col items-end">
-            <div id="clockDisplay" class="text-5xl lg:text-6xl font-black font-mono tracking-widest text-white drop-shadow-md">00:00:00</div>
-            <div id="dateDisplay" class="text-sm lg:text-base text-slate-300 mt-1 uppercase tracking-[0.1em] font-bold">Memuat Tanggal...</div>
-            <div id="syncStatus" class="text-xs font-bold text-emerald-400 mt-2 bg-emerald-900/50 px-3 py-1 rounded-full border border-emerald-500/30">
-                <i class="fas fa-sync-alt fa-spin mr-1.5"></i>Menyambungkan...
+        <div class="header-right">
+            <div id="clockDisplay" class="clock">00:00:00</div>
+            <div id="dateDisplay" class="date">Memuat Tanggal...</div>
+            <div id="syncStatus" class="sync-badge sync-ok">
+                <i class="fas fa-sync-alt fa-spin"></i> Menyambungkan...
             </div>
         </div>
     </header>
 
-    <!-- MAIN FLEXBOX (Mengganti CSS Grid dengan Flexbox yang lebih didukung TV lama) -->
-    <main class="w-full flex-1 min-h-0 flex gap-6">
+    <!-- MAIN CONTENT -->
+    <main class="main-container">
         
-        <!-- KOLOM KIRI: Top 3 (Flex Column) -->
-        <div class="w-1/2 flex flex-col gap-5" id="topThreeContainer">
-            <div class="flex-1 flex flex-col items-center justify-center bg-slate-800 rounded-3xl border border-slate-700 w-full h-full">
-                <i class="fas fa-spinner fa-spin text-6xl text-slate-500 mb-4"></i>
-                <p class="text-slate-400 font-bold uppercase text-lg">Memuat Papan Skor...</p>
+        <!-- KOLOM KIRI (Top 3) -->
+        <div class="col-left" id="topThreeContainer">
+            <div class="loading-box">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Memuat Papan Skor...</p>
             </div>
         </div>
 
-        <!-- KOLOM KANAN: Peringkat 4 - 10 (Flex Column) -->
-        <div class="w-1/2 flex flex-col gap-3" id="topOthersContainer">
-            <!-- Loading ditahan sementara -->
+        <!-- KOLOM KANAN (Top 4-10) -->
+        <div class="col-right" id="topOthersContainer">
+            <!-- Isi List Kanan -->
         </div>
 
     </main>
@@ -98,11 +186,15 @@
         // --- GANTI DENGAN URL APPS SCRIPT ANDA ---
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0jQYSSfrN2dD8Wb4kaul0eItZ5tEG5jHO-6yN_UXnSHDxyif0adevn_fhudLBJmYB4w/exec';
         
+        // Sensor Angka
         const formatNumber = (angka, isMasked) => {
             if (angka === 0 || !angka) return "0";
             const str = new Intl.NumberFormat('id-ID').format(angka);
+            
+            // Jika bukan mode siswa (berarti mode kelas), jangan sensor
             if (!isMasked) return str;
             
+            // Sensor untuk mode individu siswa
             let masked = str.charAt(0);
             for (let i = 1; i < str.length; i++) {
                 masked += (/[0-9]/.test(str[i])) ? 'X' : str[i];
@@ -110,72 +202,68 @@
             return masked;
         };
 
-        let currentView = 'siswa'; 
-        let isFirstLoad = true;
+        let currentView = 'siswa'; // 'siswa' atau 'kelas'
+        let dataGlobal = [];
 
         function fetchLeaderboard() {
             const syncStatus = document.getElementById('syncStatus');
-            syncStatus.innerHTML = '<i class="fas fa-sync-alt fa-spin mr-1.5"></i>Update...';
-            syncStatus.className = 'text-xs font-bold text-yellow-400 mt-2 bg-yellow-900/50 px-3 py-1 rounded-full border border-yellow-500/30';
+            syncStatus.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Update...';
+            syncStatus.style.color = '#fbbf24'; 
+            syncStatus.style.backgroundColor = 'rgba(146, 64, 15, 0.5)';
 
             fetch(SCRIPT_URL + '?action=getDataSiswa')
                 .then(res => res.json())
                 .then(response => {
                     if (response.status === 'success') {
-                        if (!isFirstLoad) {
-                            currentView = currentView === 'siswa' ? 'kelas' : 'siswa';
-                        }
-                        isFirstLoad = false;
-                        
-                        renderView(response.data);
+                        dataGlobal = response.data;
+                        renderView(); // Render data
                         
                         const now = new Date();
                         const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(/\./g, ':');
-                        syncStatus.innerHTML = `<i class="fas fa-check-circle mr-1.5"></i>Update: ${timeStr}`;
-                        syncStatus.className = 'text-xs font-bold text-emerald-400 mt-2 bg-emerald-900/50 px-3 py-1 rounded-full border border-emerald-500/30';
+                        syncStatus.innerHTML = `<i class="fas fa-check-circle"></i> Update: ${timeStr}`;
+                        syncStatus.style.color = '#34d399';
+                        syncStatus.style.backgroundColor = 'rgba(6, 78, 59, 0.5)';
                     }
                 })
                 .catch(error => {
-                    syncStatus.innerHTML = '<i class="fas fa-exclamation-triangle mr-1.5"></i>Offline';
-                    syncStatus.className = 'text-xs font-bold text-red-400 mt-2 bg-red-900/50 px-3 py-1 rounded-full border border-red-500/30';
+                    syncStatus.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Offline';
+                    syncStatus.style.color = '#f87171';
+                    syncStatus.style.backgroundColor = 'rgba(127, 29, 29, 0.5)';
                 });
         }
 
-        function renderView(dataSiswa) {
+        // Tampilkan Tampilan Berdasarkan State currentView
+        function renderView() {
+            if(dataGlobal.length === 0) return;
+
             const mainTitle = document.getElementById('mainTitle');
             const subTitle = document.getElementById('subTitle');
             
-            mainTitle.style.opacity = '0';
-            subTitle.style.opacity = '0';
-            
-            setTimeout(() => {
-                if (currentView === 'siswa') {
-                    mainTitle.textContent = "TOP 10 PENABUNG";
-                    subTitle.textContent = "Peringkat Individu Santri";
-                    const top10 = [...dataSiswa].sort((a, b) => b.tabungan - a.tabungan).slice(0, 10);
-                    drawCards(top10, 'siswa');
-                } else {
-                    mainTitle.textContent = "PERINGKAT KELAS";
-                    subTitle.textContent = "Akumulasi Tabungan Tertinggi per Kelas";
-                    const kelasMap = {};
-                    dataSiswa.forEach(s => {
-                        let k = s.kelas.trim().toUpperCase();
-                        if(k) {
-                            if(!kelasMap[k]) kelasMap[k] = 0;
-                            kelasMap[k] += s.tabungan;
-                        }
-                    });
-                    const arrayKelas = Object.keys(kelasMap).map(k => ({
-                        nama: k.startsWith('KELAS') ? k : 'KELAS ' + k, 
-                        kelas: 'TOTAL TABUNGAN KELAS',
-                        tabungan: kelasMap[k]
-                    }));
-                    const top10Kelas = arrayKelas.sort((a, b) => b.tabungan - a.tabungan).slice(0, 10);
-                    drawCards(top10Kelas, 'kelas');
-                }
-                mainTitle.style.opacity = '1';
-                subTitle.style.opacity = '1';
-            }, 400); 
+            if (currentView === 'siswa') {
+                mainTitle.textContent = "TOP 10 PENABUNG";
+                subTitle.textContent = "Peringkat Individu Santri";
+                const top10 = [...dataGlobal].sort((a, b) => b.tabungan - a.tabungan).slice(0, 10);
+                drawCards(top10, 'siswa');
+            } else {
+                mainTitle.textContent = "PERINGKAT KELAS";
+                subTitle.textContent = "Akumulasi Tabungan per Kelas";
+                
+                const kelasMap = {};
+                dataGlobal.forEach(s => {
+                    let k = s.kelas.trim().toUpperCase();
+                    if(k) {
+                        if(!kelasMap[k]) kelasMap[k] = 0;
+                        kelasMap[k] += s.tabungan;
+                    }
+                });
+                const arrayKelas = Object.keys(kelasMap).map(k => ({
+                    nama: k.startsWith('KELAS') ? k : 'KELAS ' + k, 
+                    kelas: 'TOTAL TABUNGAN KELAS',
+                    tabungan: kelasMap[k]
+                }));
+                const top10Kelas = arrayKelas.sort((a, b) => b.tabungan - a.tabungan).slice(0, 10);
+                drawCards(top10Kelas, 'kelas');
+            }
         }
 
         function drawCards(top10, tipe) {
@@ -185,77 +273,57 @@
             containerLeft.innerHTML = '';
             containerRight.innerHTML = '';
 
-            if (top10.length === 0) {
-                containerLeft.innerHTML = `<div class="flex-1 flex items-center justify-center text-slate-400 text-3xl font-light w-full">Belum ada data</div>`;
-                return;
-            }
-
             top10.forEach((item, index) => {
                 const rank = index + 1;
                 let subIcon = tipe === 'siswa' ? 'fa-graduation-cap' : 'fa-users';
                 let subtitleText = tipe === 'siswa' ? `KELAS ${item.kelas}` : `${item.kelas}`;
+                let isMasked = (tipe === 'siswa');
                 
-                // --- RENDER TOP 3 (KIRI - Flex-1 agar membagi rata) ---
+                // --- RENDER TOP 3 (KIRI) ---
                 if (rank <= 3) {
-                    let rankClass = rank === 1 ? 'rank-1' : (rank === 2 ? 'rank-2' : 'rank-3');
-                    let textColor = rank === 2 ? 'text-slate-800' : 'text-white';
-                    let subTextColor = rank === 2 ? 'text-slate-700' : 'text-white/90';
-                    let iconColor = rank === 1 ? 'text-yellow-100' : (rank === 2 ? 'text-slate-100' : 'text-orange-100');
+                    let bgClass = rank === 1 ? 'bg-gold' : (rank === 2 ? 'bg-silver' : 'bg-bronze');
                     let iconType = rank === 1 ? 'fa-trophy' : 'fa-medal';
-                    let delay = index * 0.2; 
+                    let delay = index * 0.1; 
 
                     containerLeft.innerHTML += `
-                        <div class="flex-1 w-full ${rankClass} rounded-2xl p-6 flex flex-row items-center animate-top3 relative overflow-hidden shadow-lg" style="animation-delay: ${delay}s">
-                            <!-- Watermark -->
-                            <i class="fas ${iconType} watermark-icon ${iconColor}"></i>
-                            
-                            <!-- Nomor Rank -->
-                            <div class="text-6xl font-black italic drop-shadow-md w-24 shrink-0 flex items-center justify-center ${textColor}">
-                                #${rank}
-                            </div>
-                            
-                            <!-- Detail Nama & Uang (Tumpuk Bawah) -->
-                            <div class="flex-1 min-w-0 flex flex-col justify-center pl-6 border-l-2 border-white/20 z-10">
-                                <h2 class="text-3xl lg:text-4xl font-black uppercase truncate drop-shadow-sm ${textColor}" title="${item.nama}">
-                                    ${item.nama}
-                                </h2>
-                                <div class="text-sm lg:text-base font-bold mt-1 flex items-center ${subTextColor} tracking-widest uppercase mb-1">
-                                    <i class="fas ${subIcon} mr-2 opacity-75"></i> ${subtitleText}
-                                </div>
-                                <div class="text-4xl lg:text-5xl font-black tracking-tighter drop-shadow-md ${textColor}">
-                                    Rp ${formatNumber(item.tabungan, tipe === 'siswa')}
-                                </div>
+                        <div class="card-top ${bgClass} animate-in" style="animation-delay: ${delay}s">
+                            <i class="fas ${iconType} watermark"></i>
+                            <div class="top-rank">#${rank}</div>
+                            <div class="top-details">
+                                <div class="top-name" title="${item.nama}">${item.nama}</div>
+                                <div class="top-class"><i class="fas ${subIcon}"></i> ${subtitleText}</div>
+                                <div class="top-amount">Rp ${formatNumber(item.tabungan, isMasked)}</div>
                             </div>
                         </div>
                     `;
                 } 
-                // --- RENDER RANK 4 - 10 (KANAN - Flex-1) ---
+                // --- RENDER RANK 4 - 10 (KANAN) ---
                 else {
                     let delay = (index - 3) * 0.1;
                     
                     containerRight.innerHTML += `
-                        <div class="flex-1 w-full rank-other rounded-xl px-5 py-3 flex flex-row items-center justify-between animate-list" style="animation-delay: ${delay}s">
-                            <!-- Rank & Nama -->
-                            <div class="flex items-center flex-1 min-w-0">
-                                <div class="text-2xl font-black text-slate-500 w-12 shrink-0 italic">#${rank}</div>
-                                <div class="flex-1 min-w-0 flex flex-col justify-center pl-3 border-l border-white/10">
-                                    <h3 class="text-xl font-bold text-white uppercase tracking-wide truncate" title="${item.nama}">
-                                        ${item.nama}
-                                    </h3>
-                                    <p class="text-xs text-slate-400 font-semibold uppercase tracking-widest"><i class="fas ${subIcon} mr-1.5 opacity-75"></i>${subtitleText}</p>
+                        <div class="card-list animate-in" style="animation-delay: ${delay}s">
+                            <div class="list-left">
+                                <div class="list-rank">#${rank}</div>
+                                <div class="list-details">
+                                    <div class="list-name" title="${item.nama}">${item.nama}</div>
+                                    <div class="list-class"><i class="fas ${subIcon}"></i> ${subtitleText}</div>
                                 </div>
                             </div>
-                            
-                            <!-- Kotak Uang -->
-                            <div class="shrink-0 text-xl font-black text-emerald-400 tracking-wider bg-slate-900/50 px-4 py-2 rounded-lg border border-emerald-500/20 shadow-inner ml-3">
-                                Rp ${formatNumber(item.tabungan, tipe === 'siswa')}
-                            </div>
+                            <div class="list-amount">Rp ${formatNumber(item.tabungan, isMasked)}</div>
                         </div>
                     `;
                 }
             });
         }
 
+        // --- SISTEM PERTUKARAN OTOMATIS LAYAR (30 Detik) ---
+        setInterval(() => {
+            currentView = currentView === 'siswa' ? 'kelas' : 'siswa';
+            renderView(); // Tukar tampilan tanpa perlu fetch data ulang
+        }, 30000); 
+
+        // --- JAM DAN TANGGAL ---
         function updateClock() {
             const now = new Date();
             const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
@@ -264,11 +332,13 @@
             document.getElementById('dateDisplay').innerText = now.toLocaleDateString('id-ID', options).toUpperCase();
         }
 
+        // --- MULAI ---
         window.onload = () => {
             updateClock();
-            setInterval(updateClock, 1000);
-            fetchLeaderboard();
-            setInterval(fetchLeaderboard, 30000); 
+            setInterval(updateClock, 1000); // Update jam tiap detik
+            
+            fetchLeaderboard(); // Panggilan pertama
+            setInterval(fetchLeaderboard, 60000); // Fetch data baru tiap 1 menit
         };
     </script>
 </body>
