@@ -194,12 +194,8 @@
             // Jika bukan mode siswa (berarti mode kelas), jangan sensor
             if (!isMasked) return str;
             
-            // Sensor untuk mode individu siswa
-            let masked = str.charAt(0);
-            for (let i = 1; i < str.length; i++) {
-                masked += (/[0-9]/.test(str[i])) ? 'X' : str[i];
-            }
-            return masked;
+            // Sensor TOTAL untuk mode individu siswa (Ganti semua angka 0-9 dengan X)
+            return str.replace(/[0-9]/g, 'X');
         };
 
         let currentView = 'siswa'; // 'siswa' atau 'kelas'
