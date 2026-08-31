@@ -437,6 +437,22 @@
         let dailyChartInstance = null;
         let pendingSyncCount = 0; // State untuk melacak background task
 
+        // TAMBAHAN: SISTEM LAZY RENDER (Render tabel hanya jika tab dibuka)
+        let renderStatus = {
+            'tab-dashboard': false,
+            'tab-daftar-siswa': false,
+            'tab-riwayat-input': false,
+            'tab-edit-siswa': false
+        };
+        
+        // Fungsi untuk menandai bahwa ada data baru dan tabel perlu digambar ulang
+        function markDataDirty() {
+            renderStatus['tab-dashboard'] = false;
+            renderStatus['tab-daftar-siswa'] = false;
+            renderStatus['tab-riwayat-input'] = false;
+            renderStatus['tab-edit-siswa'] = false;
+        }
+
         // Fungsi Format Rupiah
         const formatRp = (angka) => {
             return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
@@ -466,6 +482,21 @@
                     if(tabId === 'tab-riwayat-input') activeBtn.classList.add('border-yellow-500');
                     if(tabId === 'tab-edit-siswa') activeBtn.classList.add('border-purple-500');
                 }
+            }
+
+            // LAZY RENDERING: Gambar ulang tampilan hanya pada tab yang sedang dituju
+            if (tabId === 'tab-dashboard' && !renderStatus[tabId]) {
+                refreshDashboard();
+                renderStatus[tabId] = true;
+            } else if (tabId === 'tab-daftar-siswa' && !renderStatus[tabId]) {
+                refreshTableDaftar();
+                renderStatus[tabId] = true;
+            } else if (tabId === 'tab-riwayat-input' && !renderStatus[tabId]) {
+                refreshTableRiwayat();
+                renderStatus[tabId] = true;
+            } else if (tabId === 'tab-edit-siswa' && !renderStatus[tabId]) {
+                refreshTableEdit();
+                renderStatus[tabId] = true;
             }
 
             // AUTO FOCUS NFC JIKA MASUK TAB INPUT TABUNGAN
@@ -701,7 +732,12 @@
             const tbody = document.getElementById('tbodyRiwayat');
             tbody.innerHTML = '';
             
+            // Urutkan berdasarkan teks string murni, Jaminan Tepat
             let sorted = [...dataRiwayat].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+            
+            // OPTIMASI: Batasi maksimal yang dirender di HTML hanya 100 riwayat terbaru
+            // Mencegah HP menjadi sangat lemot (hang) saat data sudah menumpuk ribuan
+            if (sorted.length > 100) sorted = sorted.slice(0, 100);
             
             if(sorted.length === 0) {
                  tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-12 text-center text-slate-400 font-bold">Belum ada riwayat transaksi.</td></tr>`;
@@ -751,11 +787,11 @@
         }
 
         function refreshAllViews() {
-            refreshTableDaftar();
-            refreshTableRiwayat();
-            refreshTableEdit();
-            refreshDashboard();
+            // FUNGSI INI DIBIARKAN KOSONG / TIDAK DIGUNAKAN SECARA LANGSUNG
+            // Semua render sudah diambil alih oleh switchTab() (Lazy Rendering)
         }
+
+        // --- SISTEM PEMINDAH KURSOR & NFC SCAN ---
 
         // --- SISTEM PEMINDAH KURSOR & PENCARIAN SISWA ---
         function prosesIdSiswa(searchId) {
@@ -866,7 +902,8 @@
             document.getElementById('displayKelas').textContent = '-';
             setTimeout(() => document.getElementById('inputIdNfc').focus(), 100);
             
-            refreshAllViews();
+            // GANTI refreshAllViews() DENGAN markDataDirty() AGAR INSTAN (TIDAK LAG)
+            markDataDirty();
             showToast(`Setoran Rp ${formatRp(jumlah)} masuk lokal! (Menyinkronkan...)`);
 
             // 2. BACKGROUND SYNC
@@ -905,7 +942,8 @@
             // 1. UPDATE LOKAL
             dataSiswa.push({ id: idNfc, nis: nis, nama: nama, kelas: kelas, tabungan: 0 });
             document.getElementById('formTambahSiswa').reset();
-            refreshAllViews();
+            
+            markDataDirty(); // Mengganti refreshAllViews
             showToast(`Siswa ${nama} ditambahkan lokal! (Menyinkronkan...)`);
 
             // 2. BACKGROUND SYNC
@@ -940,7 +978,7 @@
                 if(r.id === oldId) { r.id = idBaru; r.nis = nisBaru; r.nama = namaBaru; r.kelas = kelasBaru; }
             });
 
-            refreshAllViews();
+            markDataDirty(); // Mengganti refreshAllViews
             showToast('Data diupdate lokal! (Menyinkronkan...)');
 
             // 2. BACKGROUND SYNC
@@ -969,7 +1007,8 @@
             
             // 1. UPDATE LOKAL
             dataSiswa = dataSiswa.filter(s => s.id !== id);
-            refreshAllViews();
+            
+            markDataDirty(); // Mengganti refreshAllViews
             showToast('Siswa dihapus lokal! (Menyinkronkan...)');
 
             // 2. BACKGROUND SYNC
@@ -1040,13 +1079,19 @@
                 fetch(SCRIPT_URL + '?action=getRiwayat').then(res => res.json()),
                 fetch(SCRIPT_URL + '?action=getDataSiswa').then(res => res.json())
             ])
-            .then(([riwayatRes, siswaRes]) => {
-                if(riwayatRes.status === 'success' && siswaRes.status === 'success') {
-                    dataRiwayat = riwayatRes.data;
-                    dataSiswa = siswaRes.data;
-                    refreshAllViews();
-                } else {
-                    throw new Error("Gagal mengambil data dari server");
+        .then(([riwayatRes, siswaRes]) => {
+            if(riwayatRes.status === 'success' && siswaRes.status === 'success') {
+                dataRiwayat = riwayatRes.data;
+                dataSiswa = siswaRes.data;
+                
+                // Beri tahu sistem bahwa data baru saja diunduh penuh
+                markDataDirty(); 
+                // Render secara paksa hanya tab yang sedang terbuka saja
+                const activeTabId = document.querySelector('.tab-content.active').id;
+                switchTab(activeTabId);
+                
+            } else {
+                throw new Error("Gagal mengambil data dari server");
                 }
             })
             .catch(error => {
