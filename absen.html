@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Absensi Kehadiran Santri (Supabase)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Supabase JS CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .loader { 
+            border: 3px solid #f3f3f3; 
+            border-top: 3px solid #3b82f6; 
+            border-radius: 50%; 
+            width: 20px; 
+            height: 20px; 
+            animation: spin 0.8s linear infinite; 
+            display: inline-block; 
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen text-slate-800">
+
+    <!-- Header -->
+    <header class="bg-blue-600 text-white shadow-md py-4 px-6 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div>
+                <h1 class="text-xl sm:text-2xl font-bold flex items-center gap-2">
+                    <span>📋 Sistem Absensi Santri</span>
+                    <span class="text-xs bg-blue-800 text-blue-200 px-2 py-0.5 rounded-full border border-blue-400">Supabase Cloud</span>
+                </h1>
+                <p class="text-xs sm:text-sm text-blue-100">Penyimpanan Terpusat & Sinkronisasi Real-time</p>
+            </div>
+            <div class="flex bg-blue-700/70 backdrop-blur p-1 rounded-lg border border-blue-500">
+                <button onclick="switchTab('input-tab')" id="btn-input-tab" class="px-4 py-1.5 rounded-md font-medium text-sm transition bg-white text-blue-600 shadow">Input Absensi</button>
+                <button onclick="switchTab('rekap-tab')" id="btn-rekap-tab" class="px-4 py-1.5 rounded-md font-medium text-sm transition text-white hover:bg-blue-600/50">Rekap Bulanan</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-4 sm:p-6">
+        
+        <!-- Status & Notifikasi Bar -->
+        <div id="status-bar" class="mb-4 p-4 rounded-xl bg-blue-50 text-blue-800 flex items-center gap-3 font-medium shadow-sm border border-blue-100 transition-all duration-300">
+            <div class="loader" id="loader-icon"></div>
+            <span id="status-text" class="text-sm">Menghubungkan ke Supabase dan memuat data master santri...</span>
+        </div>
+
+        <!-- TAB 1: INPUT ABSENSI -->
+        <section id="input-tab" class="tab-content block">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Pilih Kelas</label>
+                        <select id="input-kelas" onchange="loadAttendanceForm()" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none">
+                            <option value="">Memuat data kelas...</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Tanggal Presensi</label>
+                        <input type="date" id="input-tanggal" onchange="loadAttendanceForm()" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="p-4 bg-slate-50 border-b flex flex-wrap justify-between items-center gap-3">
+                    <div class="flex items-center gap-2">
+                        <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                        <span class="text-xs sm:text-sm font-medium text-slate-600">Default Otomatis: <strong class="text-emerald-700">Hadir</strong></span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="setAllRadio('Hadir')" class="px-3 py-1.5 text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium rounded-md transition">Semua Hadir</button>
+                        <button onclick="saveAttendance()" id="btn-save" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2 rounded-lg text-sm transition shadow flex items-center gap-2">
+                            <span>Simpan ke Supabase</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse min-w-[650px]">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-600 font-bold text-xs uppercase tracking-wider border-b">
+                                <th class="p-3 w-12 text-center">No</th>
+                                <th class="p-3 w-28">NIS</th>
+                                <th class="p-3">Nama Santri</th>
+                                <th class="p-3 text-center bg-emerald-50 text-emerald-800 w-24">Hadir</th>
+                                <th class="p-3 text-center bg-amber-50 text-amber-800 w-24">Sakit</th>
+                                <th class="p-3 text-center bg-blue-50 text-blue-800 w-24">Izin</th>
+                                <th class="p-3 text-center bg-rose-50 text-rose-800 w-24">Alpha</th>
+                            </tr>
+                        </thead>
+                        <tbody id="student-list-table" class="divide-y divide-slate-100">
+                            <tr>
+                                <td colspan="7" class="p-6 text-center text-slate-400 text-sm">Silakan pilih kelas terlebih dahulu.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: REKAP BULANAN -->
+        <section id="rekap-tab" class="tab-content hidden">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Pilih Kelas</label>
+                    <select id="rekap-kelas" onchange="generateMonthlyReport()" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500"></select>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Pilih Bulan</label>
+                    <input type="month" id="rekap-bulan" onchange="generateMonthlyReport()" class="w-full p-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex items-end">
+                    <button onclick="downloadCSV()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2.5 rounded-lg text-sm transition flex items-center justify-center gap-2 shadow">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        <span>Unduh Rekap CSV</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Ringkasan Statistik -->
+            <h2 class="text-base font-bold text-slate-800 mb-3">Statistik Absensi Bulan Ini</h2>
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 border-l-4 border-l-emerald-500">
+                    <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Total Hadir</p>
+                    <p class="text-2xl font-bold text-emerald-600" id="global-h">0</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 border-l-4 border-l-amber-500">
+                    <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Total Sakit</p>
+                    <p class="text-2xl font-bold text-amber-600" id="global-s">0</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 border-l-4 border-l-blue-500">
+                    <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Total Izin</p>
+                    <p class="text-2xl font-bold text-blue-600" id="global-i">0</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 border-l-4 border-l-rose-500">
+                    <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Total Alpha</p>
+                    <p class="text-2xl font-bold text-rose-600" id="global-a">0</p>
+                </div>
+                <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 border-l-4 border-l-slate-700">
+                    <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">% Kehadiran</p>
+                    <p class="text-2xl font-bold text-slate-700" id="global-p">0%</p>
+                </div>
+            </div>
+
+            <!-- Rekap Per Kelas -->
+            <h2 class="text-base font-bold text-slate-800 mb-3">Rekapitulasi Semua Kelas</h2>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto mb-8">
+                <table class="w-full text-left border-collapse min-w-[650px]">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-600 font-bold text-xs uppercase tracking-wider border-b">
+                            <th class="p-3 text-center">Kelas</th>
+                            <th class="p-3 text-center bg-emerald-50 text-emerald-800">Hadir</th>
+                            <th class="p-3 text-center bg-amber-50 text-amber-800">Sakit</th>
+                            <th class="p-3 text-center bg-blue-50 text-blue-800">Izin</th>
+                            <th class="p-3 text-center bg-rose-50 text-rose-800">Alpha</th>
+                            <th class="p-3 text-center bg-slate-200 text-slate-800">Persentase</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rekap-class-table" class="divide-y divide-slate-100 text-sm"></tbody>
+                </table>
+            </div>
+
+            <!-- Detail Per Siswa -->
+            <h2 class="text-base font-bold text-slate-800 mb-3" id="rekap-detail-title">Detail Kehadiran Santri</h2>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
+                <table class="w-full text-left border-collapse min-w-[650px]">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-600 font-bold text-xs uppercase tracking-wider border-b">
+                            <th class="p-3 w-12 text-center">No</th>
+                            <th class="p-3 w-28">NIS</th>
+                            <th class="p-3">Nama Santri</th>
+                            <th class="p-3 text-center bg-emerald-50 text-emerald-800 w-16">H</th>
+                            <th class="p-3 text-center bg-amber-50 text-amber-800 w-16">S</th>
+                            <th class="p-3 text-center bg-blue-50 text-blue-800 w-16">I</th>
+                            <th class="p-3 text-center bg-rose-50 text-rose-800 w-16">A</th>
+                            <th class="p-3 text-center bg-slate-200 text-slate-800 w-28">Persentase</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rekap-list-table" class="divide-y divide-slate-100 text-sm"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // ==========================================
+        // KONFIGURASI SUPABASE
+        // Terhubung langsung ke project Anda
+        // ==========================================
+        const SUPABASE_URL = "https://vpdlfjbkfcuukyykrhua.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZwZGxmamJrZmN1dWt5eWtyaHVhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNzkxNjUsImV4cCI6MjA5Nzc1NTE2NX0.QSHbi71ajuU_AggJJ5xVDeb6jffDRyyuF4C7aYeHW3Y";
+
+        // Inisialisasi Supabase Client
+        let _supabase = null;
+        if (SUPABASE_URL && SUPABASE_ANON_KEY) {
+            _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        }
+
+        // Variabel Data Internal
+        let masterStudents = [];
+        let classList = [];
+        let dbAttendance = {}; // Format: { "YYYY-MM-DD": { "NIS": "Hadir|Sakit|Izin|Alpha" } }
+
+        window.onload = async function() {
+            // Set tanggal default hari ini
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('input-tanggal').value = today;
+            document.getElementById('rekap-bulan').value = today.substring(0, 7);
+
+            if (!_supabase) {
+                showStatusBar("Konfigurasi Supabase belum diisi. Masukkan URL dan anon key di variabel JavaScript terlebih dahulu.", "warning");
+                return;
+            }
+
+            await loadInitialData();
+        };
+
+        // Fungsi menampilkan notifikasi status bar
+        function showStatusBar(message, type = "info") {
+            const statusBar = document.getElementById('status-bar');
+            const statusText = document.getElementById('status-text');
+            const loader = document.getElementById('loader-icon');
+
+            statusBar.classList.remove('hidden', 'bg-blue-50', 'text-blue-800', 'border-blue-100', 'bg-red-50', 'text-red-800', 'border-red-100', 'bg-amber-50', 'text-amber-800', 'border-amber-100', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-100');
+
+            if (type === "error") {
+                statusBar.classList.add('bg-red-50', 'text-red-800', 'border-red-100');
+                loader.style.display = 'none';
+            } else if (type === "warning") {
+                statusBar.classList.add('bg-amber-50', 'text-amber-800', 'border-amber-100');
+                loader.style.display = 'none';
+            } else if (type === "success") {
+                statusBar.classList.add('bg-emerald-50', 'text-emerald-800', 'border-emerald-100');
+                loader.style.display = 'none';
+            } else {
+                statusBar.classList.add('bg-blue-50', 'text-blue-800', 'border-blue-100');
+                loader.style.display = 'inline-block';
+            }
+
+            statusText.innerText = message;
+        }
+
+        function hideStatusBar() {
+            document.getElementById('status-bar').classList.add('hidden');
+        }
+
+        // Memuat master santri dan riwayat presensi dari Supabase
+        async function loadInitialData() {
+            try {
+                showStatusBar("Mengambil data santri dari tabel 'santri'...");
+
+                // 1. Ambil data dari tabel santri
+                const { data: santriData, error: santriErr } = await _supabase
+                    .from('santri')
+                    .select('nis, nama, kelas')
+                    .order('kelas', { ascending: true })
+                    .order('nama', { ascending: true });
+
+                if (santriErr) throw santriErr;
+
+                if (!santriData || santriData.length === 0) {
+                    showStatusBar("Tabel 'santri' kosong atau tidak ada data yang ditemukan.", "warning");
+                    return;
+                }
+
+                masterStudents = santriData.map(s => ({
+                    id: String(s.nis).trim(),
+                    name: s.nama,
+                    class: String(s.kelas).trim()
+                }));
+
+                // Ekstrak daftar kelas secara unik & urutkan
+                classList = [...new Set(masterStudents.map(s => s.class))].filter(Boolean).sort();
+
+                // Isi opsi dropdown kelas
+                const inputKelasSelect = document.getElementById('input-kelas');
+                const rekapKelasSelect = document.getElementById('rekap-kelas');
+                inputKelasSelect.innerHTML = '';
+                rekapKelasSelect.innerHTML = '';
+
+                classList.forEach(c => {
+                    inputKelasSelect.innerHTML += `<option value="${c}">Kelas ${c}</option>`;
+                    rekapKelasSelect.innerHTML += `<option value="${c}">Kelas ${c}</option>`;
+                });
+
+                // 2. Ambil seluruh catatan dari tabel presensi_siswa
+                showStatusBar("Mengambil riwayat absensi dari tabel 'presensi_siswa'...");
+                const { data: presensiData, error: presensiErr } = await _supabase
+                    .from('presensi_siswa')
+                    .select('tanggal, nis, status, kelas');
+
+                if (presensiErr) throw presensiErr;
+
+                dbAttendance = {};
+                (presensiData || []).forEach(r => {
+                    const tgl = String(r.tanggal).split('T')[0];
+                    if (!dbAttendance[tgl]) dbAttendance[tgl] = {};
+                    dbAttendance[tgl][String(r.nis).trim()] = r.status;
+                });
+
+                hideStatusBar();
+                loadAttendanceForm();
+                generateMonthlyReport();
+
+            } catch (err) {
+                console.error("Error memuat data:", err);
+                showStatusBar("Terjadi kegagalan memuat data: " + (err.message || err), "error");
+            }
+        }
+
+        // Mengubah Tab Menu
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.getElementById(tabId).classList.remove('hidden');
+
+            const btnInput = document.getElementById('btn-input-tab');
+            const btnRekap = document.getElementById('btn-rekap-tab');
+
+            if (tabId === 'input-tab') {
+                btnInput.className = "px-4 py-1.5 rounded-md font-medium text-sm transition bg-white text-blue-600 shadow";
+                btnRekap.className = "px-4 py-1.5 rounded-md font-medium text-sm transition text-white hover:bg-blue-600/50";
+                loadAttendanceForm();
+            } else {
+                btnRekap.className = "px-4 py-1.5 rounded-md font-medium text-sm transition bg-white text-blue-600 shadow";
+                btnInput.className = "px-4 py-1.5 rounded-md font-medium text-sm transition text-white hover:bg-blue-600/50";
+                generateMonthlyReport();
+            }
+        }
+
+        // Menampilkan Form Absensi berdasarkan Kelas & Tanggal
+        function loadAttendanceForm() {
+            const selectedClass = document.getElementById('input-kelas').value;
+            const selectedDate = document.getElementById('input-tanggal').value;
+            const tableBody = document.getElementById('student-list-table');
+            
+            if (!selectedClass || !selectedDate) {
+                tableBody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 text-sm">Pilih kelas dan tanggal.</td></tr>`;
+                return;
+            }
+
+            tableBody.innerHTML = '';
+            const dailyData = dbAttendance[selectedDate] || {};
+            const classStudents = masterStudents.filter(s => s.class === selectedClass);
+
+            if (classStudents.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-400 text-sm">Tidak ada santri di kelas ${selectedClass}.</td></tr>`;
+                return;
+            }
+
+            let no = 1;
+            classStudents.forEach(student => {
+                const currentStatus = dailyData[student.id] || "Hadir";
+                const row = document.createElement('tr');
+                row.className = "hover:bg-slate-50 transition border-b border-slate-100";
+                const radioClass = "w-4 h-4 cursor-pointer accent-blue-600";
+                row.innerHTML = `
+                    <td class="p-3 text-center text-xs text-slate-500 font-mono">${no++}</td>
+                    <td class="p-3 text-xs font-mono text-slate-500">${student.id}</td>
+                    <td class="p-3 text-sm font-semibold uppercase text-slate-700">${student.name}</td>
+                    <td class="p-3 text-center bg-emerald-50/40"><input type="radio" name="status-${student.id}" value="Hadir" ${currentStatus === 'Hadir' ? 'checked' : ''} class="${radioClass} accent-emerald-600"></td>
+                    <td class="p-3 text-center bg-amber-50/40"><input type="radio" name="status-${student.id}" value="Sakit" ${currentStatus === 'Sakit' ? 'checked' : ''} class="${radioClass} accent-amber-600"></td>
+                    <td class="p-3 text-center bg-blue-50/40"><input type="radio" name="status-${student.id}" value="Izin" ${currentStatus === 'Izin' ? 'checked' : ''} class="${radioClass} accent-blue-600"></td>
+                    <td class="p-3 text-center bg-rose-50/40"><input type="radio" name="status-${student.id}" value="Alpha" ${currentStatus === 'Alpha' ? 'checked' : ''} class="${radioClass} accent-rose-600"></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Tombol pintas ubah semua santri jadi status tertentu
+        function setAllRadio(statusValue) {
+            const radios = document.querySelectorAll(`input[type="radio"][value="${statusValue}"]`);
+            radios.forEach(r => r.checked = true);
+        }
+
+        // Menyimpan data absensi harian ke Supabase
+        async function saveAttendance() {
+            if (!_supabase) {
+                showStatusBar("Konfigurasi Supabase belum disetel!", "error");
+                return;
+            }
+
+            const selectedClass = document.getElementById('input-kelas').value;
+            const selectedDate = document.getElementById('input-tanggal').value;
+            const btn = document.getElementById('btn-save');
+
+            if (!selectedClass || !selectedDate) {
+                showStatusBar("Silakan pilih kelas dan tanggal yang valid terlebih dahulu.", "warning");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = `<div class="loader !w-4 !h-4 !border-2"></div> <span>Menyimpan...</span>`;
+
+            const classStudents = masterStudents.filter(s => s.class === selectedClass);
+            let recordsToSave = [];
+
+            if (!dbAttendance[selectedDate]) dbAttendance[selectedDate] = {};
+
+            classStudents.forEach(student => {
+                const radioChecked = document.querySelector(`input[name="status-${student.id}"]:checked`);
+                const val = radioChecked ? radioChecked.value : "Hadir";
+                recordsToSave.push({
+                    tanggal: selectedDate,
+                    kelas: selectedClass,
+                    nis: student.id,
+                    nama_siswa: student.name,
+                    status: val
+                });
+                dbAttendance[selectedDate][student.id] = val;
+            });
+
+            try {
+                // Hapus data presensi kelas ini di tanggal ini terlebih dahulu (idempotent / penggantian bersih)
+                const { error: delError } = await _supabase
+                    .from('presensi_siswa')
+                    .delete()
+                    .eq('tanggal', selectedDate)
+                    .eq('kelas', selectedClass);
+
+                if (delError) throw delError;
+
+                // Insert batch data baru
+                const { error: insError } = await _supabase
+                    .from('presensi_siswa')
+                    .insert(recordsToSave);
+
+                if (insError) throw insError;
+
+                btn.innerHTML = `<span>✓ Berhasil Tersimpan!</span>`;
+                btn.className = "bg-blue-600 text-white font-semibold px-6 py-2 rounded-lg text-sm transition shadow";
+
+                showStatusBar(`Presensi kelas ${selectedClass} tanggal ${selectedDate} berhasil disimpan ke Supabase!`, "success");
+
+                setTimeout(() => {
+                    btn.innerHTML = `<span>Simpan ke Supabase</span>`;
+                    btn.className = "bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-2 rounded-lg text-sm transition shadow flex items-center gap-2";
+                    btn.disabled = false;
+                }, 2500);
+
+            } catch (err) {
+                console.error("Gagal menyimpan ke Supabase:", err);
+                showStatusBar("Gagal menyimpan absensi: " + (err.message || err), "error");
+                btn.innerHTML = `<span>Simpan ke Supabase</span>`;
+                btn.disabled = false;
+            }
+        }
+
+        // Kalkulasi dan Rekapitulasi Bulanan
+        function generateMonthlyReport() {
+            const selectedClass = document.getElementById('rekap-kelas').value;
+            const selectedMonth = document.getElementById('rekap-bulan').value;
+            const tableBody = document.getElementById('rekap-list-table');
+            const classTableBody = document.getElementById('rekap-class-table');
+            
+            tableBody.innerHTML = '';
+            classTableBody.innerHTML = '';
+            document.getElementById('rekap-detail-title').innerText = `Detail Kehadiran Santri - Kelas ${selectedClass}`;
+
+            const activeDatesInMonth = Object.keys(dbAttendance).filter(date => date.startsWith(selectedMonth));
+
+            let globalStats = { H: 0, S: 0, I: 0, A: 0, Total: 0 };
+            let classStats = {};
+            classList.forEach(c => {
+                classStats[c] = { H: 0, S: 0, I: 0, A: 0, Total: 0 };
+            });
+
+            masterStudents.forEach(student => {
+                const sClass = student.class;
+                activeDatesInMonth.forEach(date => {
+                    const status = dbAttendance[date]?.[student.id];
+                    if (status) {
+                        globalStats.Total++;
+                        if (status === 'Hadir') globalStats.H++;
+                        else if (status === 'Sakit') globalStats.S++;
+                        else if (status === 'Izin') globalStats.I++;
+                        else if (status === 'Alpha') globalStats.A++;
+
+                        if (classStats[sClass]) {
+                            classStats[sClass].Total++;
+                            if (status === 'Hadir') classStats[sClass].H++;
+                            else if (status === 'Sakit') classStats[sClass].S++;
+                            else if (status === 'Izin') classStats[sClass].I++;
+                            else if (status === 'Alpha') classStats[sClass].A++;
+                        }
+                    }
+                });
+            });
+
+            // Update Statistik Global
+            let globalPersentase = globalStats.Total > 0 ? (globalStats.H / globalStats.Total) * 100 : 0;
+            document.getElementById('global-h').innerText = globalStats.H;
+            document.getElementById('global-s').innerText = globalStats.S;
+            document.getElementById('global-i').innerText = globalStats.I;
+            document.getElementById('global-a').innerText = globalStats.A;
+            
+            let pColor = globalPersentase === 0 && globalStats.Total === 0 ? "text-slate-500" : (globalPersentase < 85 ? "text-amber-600" : "text-emerald-600");
+            document.getElementById('global-p').className = `text-2xl font-bold ${pColor}`;
+            document.getElementById('global-p').innerText = (globalStats.Total > 0 ? globalPersentase.toFixed(1) : 100) + '%';
+
+            // Render Rekap Per Kelas
+            classList.forEach(c => {
+                const stats = classStats[c] || { H: 0, S: 0, I: 0, A: 0, Total: 0 };
+                let persentase = stats.Total > 0 ? (stats.H / stats.Total) * 100 : 100;
+                
+                let badgeClass = "text-emerald-700 bg-emerald-100 font-bold";
+                if (stats.Total === 0) badgeClass = "text-slate-500 bg-slate-100 font-normal";
+                else if (persentase < 75) badgeClass = "text-rose-700 bg-rose-100 font-bold";
+                else if (persentase < 85) badgeClass = "text-amber-700 bg-amber-100 font-bold";
+
+                const row = document.createElement('tr');
+                row.className = "hover:bg-slate-50";
+                row.innerHTML = `
+                    <td class="p-3 text-center font-semibold text-slate-700">Kelas ${c}</td>
+                    <td class="p-3 text-center bg-emerald-50/40">${stats.H}</td>
+                    <td class="p-3 text-center bg-amber-50/40">${stats.S}</td>
+                    <td class="p-3 text-center bg-blue-50/40">${stats.I}</td>
+                    <td class="p-3 text-center bg-rose-50/40">${stats.A}</td>
+                    <td class="p-3 text-center"><span class="px-2.5 py-1 rounded-full text-xs ${badgeClass}">${persentase.toFixed(1)}%</span></td>
+                `;
+                classTableBody.appendChild(row);
+            });
+
+            // Render Detail Per Santri di Kelas Terpilih
+            const classStudents = masterStudents.filter(s => s.class === selectedClass);
+            let no = 1;
+            classStudents.forEach(student => {
+                let countHadir = 0, countSakit = 0, countIzin = 0, countAlpha = 0, totalHari = 0;
+
+                activeDatesInMonth.forEach(date => {
+                    const status = dbAttendance[date]?.[student.id];
+                    if (status) {
+                        totalHari++;
+                        if (status === 'Hadir') countHadir++;
+                        else if (status === 'Sakit') countSakit++;
+                        else if (status === 'Izin') countIzin++;
+                        else if (status === 'Alpha') countAlpha++;
+                    }
+                });
+
+                let persentase = totalHari > 0 ? (countHadir / totalHari) * 100 : 100;
+                let badgeClass = "text-emerald-700 bg-emerald-100 font-bold";
+                if (totalHari === 0) badgeClass = "text-slate-400 bg-slate-100 font-normal";
+                else if (persentase < 75) badgeClass = "text-rose-700 bg-rose-100 font-bold";
+                else if (persentase < 85) badgeClass = "text-amber-700 bg-amber-100 font-bold";
+
+                const row = document.createElement('tr');
+                row.className = "hover:bg-slate-50";
+                row.innerHTML = `
+                    <td class="p-3 text-center text-xs text-slate-500 font-mono">${no++}</td>
+                    <td class="p-3 font-mono text-xs text-slate-500">${student.id}</td>
+                    <td class="p-3 font-semibold uppercase text-slate-700">${student.name}</td>
+                    <td class="p-3 text-center bg-emerald-50/40">${countHadir}</td>
+                    <td class="p-3 text-center bg-amber-50/40">${countSakit}</td>
+                    <td class="p-3 text-center bg-blue-50/40">${countIzin}</td>
+                    <td class="p-3 text-center bg-rose-50/40">${countAlpha}</td>
+                    <td class="p-3 text-center"><span class="px-2.5 py-1 rounded-full text-xs ${badgeClass}">${persentase.toFixed(1)}%</span></td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Export Data Rekap Bulanan ke CSV
+        function downloadCSV() {
+            const selectedClass = document.getElementById('rekap-kelas').value;
+            const selectedMonth = document.getElementById('rekap-bulan').value;
+            const classStudents = masterStudents.filter(s => s.class === selectedClass);
+            const activeDatesInMonth = Object.keys(dbAttendance).filter(date => date.startsWith(selectedMonth));
+
+            let csvContent = "\uFEFFREKAP ABSENSI SANTRI KELAS " + selectedClass + " (" + selectedMonth + ")\n";
+            csvContent += "No,NIS,Nama Santri,Hadir,Sakit,Izin,Alpha,Persentase Kehadiran\n";
+
+            let no = 1;
+            classStudents.forEach(student => {
+                let countHadir = 0, countSakit = 0, countIzin = 0, countAlpha = 0, totalHari = 0;
+                activeDatesInMonth.forEach(date => {
+                    const status = dbAttendance[date]?.[student.id];
+                    if (status) {
+                        totalHari++;
+                        if (status === 'Hadir') countHadir++;
+                        else if (status === 'Sakit') countSakit++;
+                        else if (status === 'Izin') countIzin++;
+                        else if (status === 'Alpha') countAlpha++;
+                    }
+                });
+                let persentase = totalHari > 0 ? (countHadir / totalHari) * 100 : 100;
+                csvContent += `${no++},"${student.id}","${student.name}",${countHadir},${countSakit},${countIzin},${countAlpha},"${persentase.toFixed(1)}%"\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            link.setAttribute("href", url);
+            link.setAttribute("download", `Rekap_Absensi_${selectedClass.replace(/\s+/g, '_')}_${selectedMonth}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>
