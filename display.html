@@ -3,260 +3,619 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leaderboard Tabungan Santri</title>
+    <title>Display Smart TV - Tabungan & Pengumuman</title>
     
-    <!-- Font dan Ikon tetap dibiarkan -->
+    <!-- FontAwesome 6 -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <!-- Google Fonts Poppins & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&family=Inter:wght@600;700;800;900&display=swap" rel="stylesheet">
     
-    <!-- CSS MURNI (Dijamin Jalan di Smart TV) -->
+    <!-- CSS MURNI RINGAN & OPTIMAL UNTUK SMART TV -->
     <style>
-        /* Reset Dasar */
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
         
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: #0f172a; 
-            color: white;
+            background: radial-gradient(circle at 50% 0%, #1e293b 0%, #0b1120 100%);
+            color: #ffffff;
             height: 100vh;
             width: 100vw;
-            overflow: hidden; 
+            overflow: hidden;
             display: flex;
             flex-direction: column;
-            padding: 20px;
-            gap: 20px;
+            padding: 16px 22px;
+            gap: 14px;
+            user-select: none;
         }
 
-        /* --- HEADER --- */
         .header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background-color: #1e293b;
-            padding: 20px 30px;
-            border-radius: 20px;
+            background: rgba(30, 41, 59, 0.95);
+            padding: 14px 24px;
+            border-radius: 18px;
             border: 2px solid #334155;
             flex-shrink: 0;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
         }
-        .header-left { display: flex; align-items: center; gap: 20px; }
-        .header-icon {
-            background: linear-gradient(135deg, #34d399 0%, #059669 100%);
-            padding: 15px 20px;
-            border-radius: 15px;
-            font-size: 2.5rem;
-            color: white;
-        }
-        .header-title { font-size: 2.2rem; font-weight: 900; color: #6ee7b7; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 5px; line-height: 1;}
-        .header-subtitle { font-size: 1.1rem; color: #cbd5e1; font-weight: 600; letter-spacing: 1px;}
-        .header-right { text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
-        .clock { font-size: 3rem; font-weight: 900; font-family: monospace; line-height: 1; letter-spacing: 2px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);}
-        .date { font-size: 0.9rem; color: #cbd5e1; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-top: 5px;}
-        .sync-badge { font-size: 0.8rem; font-weight: bold; padding: 5px 12px; border-radius: 20px; margin-top: 10px; display: inline-block;}
-        .sync-ok { background-color: rgba(6, 78, 59, 0.5); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.3); }
 
-        /* --- LAYOUT UTAMA (KIRI KANAN) --- */
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }
+
+        .header-icon {
+            background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+            width: 58px;
+            height: 58px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.1rem;
+            color: white;
+            box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
+            transition: background 0.3s ease;
+        }
+
+        .header-title-box {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header-title {
+            font-size: 2rem;
+            font-weight: 900;
+            color: #6ee7b7;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            line-height: 1.1;
+        }
+
+        .header-subtitle {
+            font-size: 0.95rem;
+            color: #94a3b8;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+        }
+
+        .header-right {
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .clock {
+            font-size: 2.6rem;
+            font-weight: 900;
+            font-family: 'Inter', monospace;
+            line-height: 1;
+            letter-spacing: 2px;
+            color: #f8fafc;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        .date-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 5px;
+        }
+
+        .date {
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        .sync-badge {
+            font-size: 0.72rem;
+            font-weight: 800;
+            padding: 3px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .sync-ok {
+            background-color: rgba(6, 78, 59, 0.65);
+            color: #34d399;
+            border: 1px solid rgba(52, 211, 153, 0.35);
+        }
+
+        .sync-loading {
+            background-color: rgba(146, 64, 15, 0.65);
+            color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.35);
+        }
+
         .main-container {
             display: flex;
             flex: 1;
-            gap: 20px;
-            min-height: 0; /* Penting untuk flexbox overflow */
+            gap: 16px;
+            min-height: 0;
+            position: relative;
         }
+
         .col-left, .col-right {
             width: 50%;
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 12px;
+            min-height: 0;
         }
 
-        /* --- KARTU JUARA 1, 2, 3 (KIRI) --- */
+        /* Top 3 Podium Cards */
         .card-top {
-            flex: 1; /* Membagi tinggi rata */
+            flex: 1;
             display: flex;
             align-items: center;
-            padding: 0 30px;
-            border-radius: 20px;
+            padding: 0 24px;
+            border-radius: 18px;
             position: relative;
             overflow: hidden;
-            box-shadow: 0 10px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.15);
         }
-        /* Warna Medali */
-        .bg-gold { background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%); color: white; }
-        .bg-silver { background: linear-gradient(135deg, #e5e7eb 0%, #9ca3af 100%); color: #1e293b; }
-        .bg-bronze { background: linear-gradient(135deg, #fdba74 0%, #c2410c 100%); color: white; }
-        
+
+        .bg-gold {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 50%, #78350f 100%);
+            color: #ffffff;
+            border-color: rgba(251, 191, 36, 0.45);
+        }
+
+        .bg-silver {
+            background: linear-gradient(135deg, #475569 0%, #334155 50%, #1e293b 100%);
+            color: #ffffff;
+            border-color: rgba(148, 163, 184, 0.35);
+        }
+
+        .bg-bronze {
+            background: linear-gradient(135deg, #9a3412 0%, #7c2d12 50%, #431407 100%);
+            color: #ffffff;
+            border-color: rgba(251, 146, 60, 0.35);
+        }
+
         .watermark {
             position: absolute;
-            right: -20px;
-            bottom: -40px;
-            font-size: 15rem;
-            opacity: 0.15;
+            right: -10px;
+            bottom: -30px;
+            font-size: 12rem;
+            opacity: 0.12;
             z-index: 1;
+            pointer-events: none;
         }
-        .bg-gold .watermark { color: #fef3c7; }
-        .bg-silver .watermark { color: #f1f5f9; }
-        .bg-bronze .watermark { color: #ffedd5; }
 
-        .top-rank { font-size: 4rem; font-weight: 900; font-style: italic; width: 80px; z-index: 2; text-shadow: 2px 2px 5px rgba(0,0,0,0.2);}
-        .top-details { flex: 1; z-index: 2; border-left: 2px solid rgba(255,255,255,0.3); padding-left: 25px; overflow: hidden; }
-        .bg-silver .top-details { border-left-color: rgba(0,0,0,0.1); }
-        
-        .top-name { font-size: 2.2rem; font-weight: 900; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; margin-bottom: 5px; }
-        .top-class { font-size: 1rem; font-weight: bold; text-transform: uppercase; opacity: 0.9; margin-bottom: 5px;}
-        .top-amount { font-size: 2.8rem; font-weight: 900; line-height: 1; text-shadow: 2px 2px 5px rgba(0,0,0,0.2);}
+        .top-rank {
+            font-size: 3.5rem;
+            font-weight: 900;
+            font-style: italic;
+            width: 72px;
+            z-index: 2;
+            text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.4);
+            font-family: 'Inter', sans-serif;
+        }
 
-        /* --- KARTU JUARA 4-10 (KANAN) --- */
+        .top-details {
+            flex: 1;
+            z-index: 2;
+            border-left: 2px solid rgba(255, 255, 255, 0.25);
+            padding-left: 20px;
+            overflow: hidden;
+        }
+
+        .top-name {
+            font-size: 1.8rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.2;
+            letter-spacing: 0.5px;
+        }
+
+        .top-class {
+            font-size: 0.92rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            opacity: 0.9;
+            margin-top: 3px;
+            margin-bottom: 3px;
+            color: #e2e8f0;
+        }
+
+        .top-amount {
+            font-size: 2.1rem;
+            font-weight: 900;
+            line-height: 1.1;
+            font-family: 'Inter', monospace;
+            text-shadow: 1px 2px 4px rgba(0, 0, 0, 0.4);
+            color: #fef08a;
+        }
+
+        .bg-silver .top-amount { color: #f1f5f9; }
+        .bg-bronze .top-amount { color: #fed7aa; }
+
+        /* Top 4-10 List Cards */
         .card-list {
-            flex: 1; /* Membagi tinggi rata */
+            flex: 1;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background-color: #1e293b;
-            padding: 0 20px;
-            border-radius: 12px;
+            background-color: rgba(30, 41, 59, 0.92);
+            padding: 0 18px;
+            border-radius: 14px;
             border: 1px solid #334155;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
         }
-        .list-left { display: flex; align-items: center; flex: 1; overflow: hidden; }
-        .list-rank { font-size: 1.5rem; font-weight: 900; font-style: italic; color: #64748b; width: 45px; }
-        .list-details { flex: 1; border-left: 1px solid rgba(255,255,255,0.1); padding-left: 15px; overflow: hidden; }
-        .list-name { font-size: 1.1rem; font-weight: 800; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: white; margin-bottom: 2px;}
-        .list-class { font-size: 0.75rem; font-weight: bold; text-transform: uppercase; color: #94a3b8; }
-        
-        .list-amount {
-            font-size: 1.2rem;
+
+        .list-left {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .list-rank {
+            font-size: 1.35rem;
             font-weight: 900;
-            color: #34d399;
-            background-color: #0f172a;
-            padding: 8px 15px;
-            border-radius: 8px;
-            border: 1px solid rgba(52, 211, 153, 0.2);
-            margin-left: 15px;
-            flex-shrink: 0;
+            font-style: italic;
+            color: #64748b;
+            width: 42px;
+            font-family: 'Inter', sans-serif;
         }
 
-        /* Loading View */
-        .loading-box { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; background-color: #1e293b; border-radius: 20px; border: 2px solid #334155;}
-        .loading-box i { font-size: 4rem; color: #64748b; margin-bottom: 20px; }
-        .loading-box p { font-size: 1.5rem; color: #94a3b8; font-weight: bold; text-transform: uppercase; }
+        .list-details {
+            flex: 1;
+            border-left: 1px solid rgba(255, 255, 255, 0.12);
+            padding-left: 14px;
+            overflow: hidden;
+        }
 
-        /* Animasi */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-in { animation: fadeIn 0.4s ease-out forwards; opacity: 0; }
+        .list-name {
+            font-size: 1.05rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: #f8fafc;
+            line-height: 1.2;
+        }
+
+        .list-class {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+
+        .list-amount {
+            font-size: 1.15rem;
+            font-weight: 900;
+            font-family: 'Inter', monospace;
+            color: #34d399;
+            background-color: #0b1329;
+            padding: 6px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(52, 211, 153, 0.25);
+            margin-left: 12px;
+            flex-shrink: 0;
+            letter-spacing: 0.5px;
+        }
+
+        .slide-pengumuman-box {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+            background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+            border-radius: 20px;
+            border: 2px solid #ef4444;
+            padding: 36px 48px;
+            box-shadow: 0 12px 35px rgba(239, 68, 68, 0.15);
+            position: relative;
+            overflow: hidden;
+            justify-content: space-between;
+        }
+
+        .pengumuman-top-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+            color: #ffffff;
+            font-size: 1.15rem;
+            font-weight: 900;
+            padding: 8px 20px;
+            border-radius: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            width: fit-content;
+            box-shadow: 0 4px 15px rgba(239, 68, 68, 0.35);
+        }
+
+        .pengumuman-content {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px 0;
+            text-align: center;
+        }
+
+        .pengumuman-text {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #fef08a;
+            line-height: 1.45;
+            letter-spacing: 0.8px;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.6);
+            white-space: pre-line;
+            max-width: 90%;
+        }
+
+        .pengumuman-footer-note {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.12);
+            padding-top: 14px;
+            color: #94a3b8;
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .footer-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 14px;
+            flex-shrink: 0;
+            padding: 4px 0;
+        }
+
+        .slide-pill {
+            padding: 7px 18px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: #64748b;
+            background: rgba(30, 41, 59, 0.7);
+            border: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .slide-pill.active {
+            color: #ffffff;
+            background: #1e293b;
+            border-color: #34d399;
+            box-shadow: 0 0 15px rgba(52, 211, 153, 0.3);
+        }
+
+        .slide-pill.active.pill-pengumuman {
+            border-color: #ef4444;
+            box-shadow: 0 0 15px rgba(239, 68, 68, 0.35);
+        }
+
+        /* Loading & Empty State */
+        .loading-box {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #1e293b;
+            border-radius: 18px;
+            border: 2px solid #334155;
+            gap: 14px;
+        }
+        .loading-box i { font-size: 3.5rem; color: #64748b; }
+        .loading-box p { font-size: 1.15rem; color: #94a3b8; font-weight: 800; text-transform: uppercase; }
+
+        @keyframes fadeEntry {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-in {
+            animation: fadeEntry 0.35s ease-out forwards;
+            opacity: 0;
+        }
     </style>
 </head>
 <body>
 
-    <!-- HEADER -->
     <header class="header">
         <div class="header-left">
-            <div class="header-icon"><i class="fas fa-piggy-bank"></i></div>
-            <div>
+            <div id="headerIconBox" class="header-icon">
+                <i class="fas fa-piggy-bank"></i>
+            </div>
+            <div class="header-title-box">
                 <h1 id="mainTitle" class="header-title">TOP 10 PENABUNG</h1>
                 <p id="subTitle" class="header-subtitle">Peringkat Individu Santri</p>
             </div>
         </div>
         <div class="header-right">
             <div id="clockDisplay" class="clock">00:00:00</div>
-            <div id="dateDisplay" class="date">Memuat Tanggal...</div>
-            <div id="syncStatus" class="sync-badge sync-ok">
-                <i class="fas fa-sync-alt fa-spin"></i> Menyambungkan...
+            <div class="date-box">
+                <div id="dateDisplay" class="date">MEMUAT TANGGAL...</div>
+                <div id="syncStatus" class="sync-badge sync-ok">
+                    <i class="fas fa-check-circle"></i> SIAP
+                </div>
             </div>
         </div>
     </header>
 
-    <!-- MAIN CONTENT -->
     <main class="main-container">
         
-        <!-- KOLOM KIRI (Top 3) -->
+        <!-- KOLOM KIRI (Top 3 Podium) -->
         <div class="col-left" id="topThreeContainer">
             <div class="loading-box">
                 <i class="fas fa-spinner fa-spin"></i>
-                <p>Memuat Papan Skor...</p>
+                <p>Memuat Data Santri...</p>
             </div>
         </div>
 
-        <!-- KOLOM KANAN (Top 4-10) -->
+        <!-- KOLOM KANAN (Top 4 - 10) -->
         <div class="col-right" id="topOthersContainer">
-            <!-- Isi List Kanan -->
+            <div class="loading-box">
+                <i class="fas fa-coins"></i>
+                <p>Menyiapkan Papan Peringkat...</p>
+            </div>
+        </div>
+
+        <!-- SLIDE 3: PENGUMUMAN LAYAR PENUH -->
+        <div class="slide-pengumuman-box" id="pengumumanContainer">
+            <div class="pengumuman-top-badge">
+                <i class="fas fa-bullhorn"></i>
+                <span>INFORMASI & PENGUMUMAN RESMI</span>
+            </div>
+            <div class="pengumuman-content">
+                <div class="pengumuman-text" id="slidePengumumanText">
+                    Selamat datang di Sistem Tabungan Santri. Terus tingkatkan semangat menabung Anda!
+                </div>
+            </div>
+            <div class="pengumuman-footer-note">
+                <span><i class="fas fa-broadcast-tower mr-2"></i> Siaran Smart TV Pesantren</span>
+                <span id="pengumumanUpdateTag">PENGUMUMAN AKTIF</span>
+            </div>
         </div>
 
     </main>
 
+    <footer class="footer-bar">
+        <div class="slide-pill active" id="pill-siswa">
+            <i class="fas fa-user-graduate"></i>
+            <span>Top 10 Santri</span>
+        </div>
+        <div class="slide-pill" id="pill-kelas">
+            <i class="fas fa-users"></i>
+            <span>Peringkat Kelas</span>
+        </div>
+        <div class="slide-pill pill-pengumuman" id="pill-pengumuman">
+            <i class="fas fa-bullhorn"></i>
+            <span>Pengumuman Pondok</span>
+        </div>
+    </footer>
+
     <script>
-        // --- GANTI DENGAN URL APPS SCRIPT ANDA ---
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0jQYSSfrN2dD8Wb4kaul0eItZ5tEG5jHO-6yN_UXnSHDxyif0adevn_fhudLBJmYB4w/exec';
-        
-        // Sensor Angka
+
+        // Format angka dengan opsi sensor privasi
         const formatNumber = (angka, isMasked) => {
             if (angka === 0 || !angka) return "0";
             const str = new Intl.NumberFormat('id-ID').format(angka);
-            
-            // Jika bukan mode siswa (berarti mode kelas), jangan sensor
             if (!isMasked) return str;
-            
-            // Sensor TOTAL untuk mode individu siswa (Ganti semua angka 0-9 dengan X)
             return str.replace(/[0-9]/g, 'X');
         };
 
-        let currentView = 'siswa'; // 'siswa' atau 'kelas'
+        let currentView = 'siswa'; // 'siswa' -> 'kelas' -> 'pengumuman'
         let dataGlobal = [];
+        let pengumumanGlobal = "Selamat datang di Sistem Tabungan Santri. Terus tingkatkan semangat menabung Anda!";
 
-        function fetchLeaderboard() {
-            const syncStatus = document.getElementById('syncStatus');
-            syncStatus.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> Update...';
-            syncStatus.style.color = '#fbbf24'; 
-            syncStatus.style.backgroundColor = 'rgba(146, 64, 15, 0.5)';
+        // Update indikator pill di bawah
+        function updateSlideIndicators() {
+            const pillSiswa = document.getElementById('pill-siswa');
+            const pillKelas = document.getElementById('pill-kelas');
+            const pillPengumuman = document.getElementById('pill-pengumuman');
 
-            fetch(SCRIPT_URL + '?action=getDataSiswa')
-                .then(res => res.json())
-                .then(response => {
-                    if (response.status === 'success') {
-                        dataGlobal = response.data;
-                        renderView(); // Render data
-                        
-                        const now = new Date();
-                        const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(/\./g, ':');
-                        syncStatus.innerHTML = `<i class="fas fa-check-circle"></i> Update: ${timeStr}`;
-                        syncStatus.style.color = '#34d399';
-                        syncStatus.style.backgroundColor = 'rgba(6, 78, 59, 0.5)';
-                    }
-                })
-                .catch(error => {
-                    syncStatus.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Offline';
-                    syncStatus.style.color = '#f87171';
-                    syncStatus.style.backgroundColor = 'rgba(127, 29, 29, 0.5)';
-                });
+            if (pillSiswa) pillSiswa.classList.toggle('active', currentView === 'siswa');
+            if (pillKelas) pillKelas.classList.toggle('active', currentView === 'kelas');
+            if (pillPengumuman) pillPengumuman.classList.toggle('active', currentView === 'pengumuman');
         }
 
-        // Tampilkan Tampilan Berdasarkan State currentView
         function renderView() {
-            if(dataGlobal.length === 0) return;
-
             const mainTitle = document.getElementById('mainTitle');
             const subTitle = document.getElementById('subTitle');
-            
+            const colLeft = document.getElementById('topThreeContainer');
+            const colRight = document.getElementById('topOthersContainer');
+            const pengumumanBox = document.getElementById('pengumumanContainer');
+            const iconBox = document.getElementById('headerIconBox');
+
+            updateSlideIndicators();
+
+            // SLIDE 3: PENGUMUMAN LAYAR PENUH
+            if (currentView === 'pengumuman') {
+                if (colLeft) colLeft.style.display = 'none';
+                if (colRight) colRight.style.display = 'none';
+                if (pengumumanBox) pengumumanBox.style.display = 'flex';
+
+                if (mainTitle) mainTitle.textContent = "PENGUMUMAN PONDOK";
+                if (subTitle) subTitle.textContent = "Pemberitahuan & Informasi Resmi Pesantren";
+                if (iconBox) {
+                    iconBox.style.background = 'linear-gradient(135deg, #ef4444 0%, #b91c1c 100%)';
+                    iconBox.innerHTML = '<i class="fas fa-bullhorn"></i>';
+                }
+
+                const textEl = document.getElementById('slidePengumumanText');
+                if (textEl) {
+                    textEl.textContent = pengumumanGlobal || "Tidak ada pengumuman baru saat ini.";
+                }
+                return;
+            }
+
+            // SLIDE 1 & 2: TABUNGAN
+            if (colLeft) colLeft.style.display = 'flex';
+            if (colRight) colRight.style.display = 'flex';
+            if (pengumumanBox) pengumumanBox.style.display = 'none';
+
+            if (iconBox) {
+                iconBox.style.background = 'linear-gradient(135deg, #10b981 0%, #047857 100%)';
+                iconBox.innerHTML = '<i class="fas fa-piggy-bank"></i>';
+            }
+
+            if (!dataGlobal || dataGlobal.length === 0) {
+                // Tampilkan pesan kosong jika belum ada data sama sekali
+                drawCards([], currentView);
+                return;
+            }
+
             if (currentView === 'siswa') {
-                mainTitle.textContent = "TOP 10 PENABUNG";
-                subTitle.textContent = "Peringkat Individu Santri";
+                if (mainTitle) mainTitle.textContent = "TOP 10 PENABUNG";
+                if (subTitle) subTitle.textContent = "Peringkat Individu Santri";
                 const top10 = [...dataGlobal].sort((a, b) => b.tabungan - a.tabungan).slice(0, 10);
                 drawCards(top10, 'siswa');
-            } else {
-                mainTitle.textContent = "PERINGKAT KELAS";
-                subTitle.textContent = "Akumulasi Tabungan per Kelas";
+            } else if (currentView === 'kelas') {
+                if (mainTitle) mainTitle.textContent = "PERINGKAT KELAS";
+                if (subTitle) subTitle.textContent = "Akumulasi Tabungan per Kelas";
                 
                 const kelasMap = {};
                 dataGlobal.forEach(s => {
-                    let k = s.kelas.trim().toUpperCase();
+                    let k = (s.kelas || '').trim().toUpperCase();
                     if(k) {
                         if(!kelasMap[k]) kelasMap[k] = 0;
-                        kelasMap[k] += s.tabungan;
+                        kelasMap[k] += (s.tabungan || 0);
                     }
                 });
+
                 const arrayKelas = Object.keys(kelasMap).map(k => ({
                     nama: k.startsWith('KELAS') ? k : 'KELAS ' + k, 
-                    kelas: 'TOTAL TABUNGAN KELAS',
+                    kelas: 'AKUMULASI TOTAL',
                     tabungan: kelasMap[k]
                 }));
+
                 const top10Kelas = arrayKelas.sort((a, b) => b.tabungan - a.tabungan).slice(0, 10);
                 drawCards(top10Kelas, 'kelas');
             }
@@ -265,21 +624,38 @@
         function drawCards(top10, tipe) {
             const containerLeft = document.getElementById('topThreeContainer');
             const containerRight = document.getElementById('topOthersContainer');
+            if (!containerLeft || !containerRight) return;
             
             containerLeft.innerHTML = '';
             containerRight.innerHTML = '';
 
+            if (top10.length === 0) {
+                containerLeft.innerHTML = `
+                    <div class="loading-box">
+                        <i class="fas fa-inbox"></i>
+                        <p>Belum Ada Data Tabungan</p>
+                    </div>
+                `;
+                containerRight.innerHTML = `
+                    <div class="loading-box">
+                        <i class="fas fa-info-circle"></i>
+                        <p>Data Masih Kosong</p>
+                    </div>
+                `;
+                return;
+            }
+
             top10.forEach((item, index) => {
                 const rank = index + 1;
-                let subIcon = tipe === 'siswa' ? 'fa-graduation-cap' : 'fa-users';
-                let subtitleText = tipe === 'siswa' ? `KELAS ${item.kelas}` : `${item.kelas}`;
-                let isMasked = (tipe === 'siswa');
+                const subIcon = tipe === 'siswa' ? 'fa-graduation-cap' : 'fa-users';
+                const subtitleText = tipe === 'siswa' ? `KELAS ${item.kelas}` : `${item.kelas}`;
+                const isMasked = (tipe === 'siswa');
                 
-                // --- RENDER TOP 3 (KIRI) ---
+                // Podium 1, 2, 3
                 if (rank <= 3) {
-                    let bgClass = rank === 1 ? 'bg-gold' : (rank === 2 ? 'bg-silver' : 'bg-bronze');
-                    let iconType = rank === 1 ? 'fa-trophy' : 'fa-medal';
-                    let delay = index * 0.1; 
+                    const bgClass = rank === 1 ? 'bg-gold' : (rank === 2 ? 'bg-silver' : 'bg-bronze');
+                    const iconType = rank === 1 ? 'fa-trophy' : 'fa-medal';
+                    const delay = index * 0.08; 
 
                     containerLeft.innerHTML += `
                         <div class="card-top ${bgClass} animate-in" style="animation-delay: ${delay}s">
@@ -287,15 +663,15 @@
                             <div class="top-rank">#${rank}</div>
                             <div class="top-details">
                                 <div class="top-name" title="${item.nama}">${item.nama}</div>
-                                <div class="top-class"><i class="fas ${subIcon}"></i> ${subtitleText}</div>
+                                <div class="top-class"><i class="fas ${subIcon} mr-1"></i> ${subtitleText}</div>
                                 <div class="top-amount">Rp ${formatNumber(item.tabungan, isMasked)}</div>
                             </div>
                         </div>
                     `;
                 } 
-                // --- RENDER RANK 4 - 10 (KANAN) ---
+                // Peringkat 4 - 10
                 else {
-                    let delay = (index - 3) * 0.1;
+                    const delay = (index - 3) * 0.06;
                     
                     containerRight.innerHTML += `
                         <div class="card-list animate-in" style="animation-delay: ${delay}s">
@@ -303,7 +679,7 @@
                                 <div class="list-rank">#${rank}</div>
                                 <div class="list-details">
                                     <div class="list-name" title="${item.nama}">${item.nama}</div>
-                                    <div class="list-class"><i class="fas ${subIcon}"></i> ${subtitleText}</div>
+                                    <div class="list-class"><i class="fas ${subIcon} mr-1"></i> ${subtitleText}</div>
                                 </div>
                             </div>
                             <div class="list-amount">Rp ${formatNumber(item.tabungan, isMasked)}</div>
@@ -313,28 +689,129 @@
             });
         }
 
-        // --- SISTEM PERTUKARAN OTOMATIS LAYAR (30 Detik) ---
-        setInterval(() => {
-            currentView = currentView === 'siswa' ? 'kelas' : 'siswa';
-            renderView(); // Tukar tampilan tanpa perlu fetch data ulang
-        }, 30000); 
+        async function fetchSmartTvData() {
+            const syncStatus = document.getElementById('syncStatus');
+            if (syncStatus) {
+                syncStatus.className = 'sync-badge sync-loading';
+                syncStatus.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> SINKRON';
+            }
 
-        // --- JAM DAN TANGGAL ---
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 6500);
+
+            try {
+                const res = await fetch(SCRIPT_URL + '?action=getAllData', {
+                    signal: controller.signal,
+                    cache: 'no-cache'
+                });
+                const response = await res.json();
+                clearTimeout(timeoutId);
+
+                if (response.status === 'success' && response.data) {
+                    dataGlobal = response.data.siswa || [];
+                    if (response.data.pengumuman) {
+                        pengumumanGlobal = response.data.pengumuman;
+                    }
+                    
+                    localStorage.setItem('tv_dataGlobal', JSON.stringify(dataGlobal));
+                    localStorage.setItem('tv_pengumuman', pengumumanGlobal);
+
+                    renderView();
+
+                    const now = new Date();
+                    const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(/\./g, ':');
+                    if (syncStatus) {
+                        syncStatus.className = 'sync-badge sync-ok';
+                        syncStatus.innerHTML = `<i class="fas fa-check-circle"></i> UPDATE ${timeStr}`;
+                    }
+                    return;
+                }
+                throw new Error("Format respons tidak valid");
+            } catch (err) {
+                clearTimeout(timeoutId);
+                console.warn("Menggunakan data cache atau fallback satuan...", err);
+
+                // Fallback request satuan jika script lama belum diperbarui
+                try {
+                    const [resSiswa, resPengumuman] = await Promise.all([
+                        fetch(SCRIPT_URL + '?action=getDataSiswa').then(r => r.json()).catch(() => null),
+                        fetch(SCRIPT_URL + '?action=getPengumuman').then(r => r.json()).catch(() => null)
+                    ]);
+
+                    if (resSiswa && resSiswa.status === 'success' && Array.isArray(resSiswa.data)) {
+                        dataGlobal = resSiswa.data;
+                        localStorage.setItem('tv_dataGlobal', JSON.stringify(dataGlobal));
+                    }
+                    if (resPengumuman && resPengumuman.status === 'success' && resPengumuman.data) {
+                        pengumumanGlobal = resPengumuman.data;
+                        localStorage.setItem('tv_pengumuman', pengumumanGlobal);
+                    }
+                    renderView();
+                    if (syncStatus) {
+                        syncStatus.className = 'sync-badge sync-ok';
+                        syncStatus.innerHTML = `<i class="fas fa-check-circle"></i> LIVE`;
+                    }
+                } catch (fallbackErr) {
+                    const cachedData = localStorage.getItem('tv_dataGlobal');
+                    const cachedPengumuman = localStorage.getItem('tv_pengumuman');
+                    if (cachedData) {
+                        try { dataGlobal = JSON.parse(cachedData); } catch(e) {}
+                    }
+                    if (cachedPengumuman) {
+                        pengumumanGlobal = cachedPengumuman;
+                    }
+                    renderView();
+                    if (syncStatus) {
+                        syncStatus.className = 'sync-badge sync-loading';
+                        syncStatus.innerHTML = `<i class="fas fa-wifi"></i> CACHE`;
+                    }
+                }
+            }
+        }
+
         function updateClock() {
             const now = new Date();
             const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-            document.getElementById('clockDisplay').innerText = timeStr.replace(/\./g, ':'); 
+            const clockEl = document.getElementById('clockDisplay');
+            if (clockEl) clockEl.innerText = timeStr.replace(/\./g, ':'); 
+            
             const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('dateDisplay').innerText = now.toLocaleDateString('id-ID', options).toUpperCase();
+            const dateEl = document.getElementById('dateDisplay');
+            if (dateEl) dateEl.innerText = now.toLocaleDateString('id-ID', options).toUpperCase();
         }
 
-        // --- MULAI ---
         window.onload = () => {
             updateClock();
-            setInterval(updateClock, 1000); // Update jam tiap detik
+            setInterval(updateClock, 1000);
             
-            fetchLeaderboard(); // Panggilan pertama
-            setInterval(fetchLeaderboard, 60000); // Fetch data baru tiap 1 menit
+            // Baca cache terlebih dahulu agar TV tidak kosong sedetik pun saat dinyalakan
+            const cachedData = localStorage.getItem('tv_dataGlobal');
+            const cachedPengumuman = localStorage.getItem('tv_pengumuman');
+            if (cachedData) {
+                try { dataGlobal = JSON.parse(cachedData); } catch(e) {}
+            }
+            if (cachedPengumuman) {
+                pengumumanGlobal = cachedPengumuman;
+            }
+            renderView();
+
+            // Panggilan pertama ke server
+            fetchSmartTvData();
+
+            // Refresh data dari Google Sheets setiap 40 detik
+            setInterval(fetchSmartTvData, 40000);
+
+            // Rotasi 3 Slide: Top 10 Santri -> Peringkat Kelas -> Pengumuman (setiap 20 detik)
+            setInterval(() => {
+                if (currentView === 'siswa') {
+                    currentView = 'kelas';
+                } else if (currentView === 'kelas') {
+                    currentView = 'pengumuman';
+                } else {
+                    currentView = 'siswa';
+                }
+                renderView();
+            }, 20000);
         };
     </script>
 </body>
