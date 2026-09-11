@@ -53,6 +53,10 @@
         <div class="spinner mb-4"></div>
         <p class="text-blue-600 font-black tracking-widest text-lg">MENGUNDUH DATA SERVER...</p>
         <p class="text-slate-500 text-sm mt-2 font-medium">Mohon tunggu sebentar</p>
+        <!-- Tombol Darurat jika Server Lambat -->
+        <button onclick="showLoading(false)" class="mt-6 px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-xl transition shadow-sm">
+            Lewati / Masuk ke Dashboard &rarr;
+        </button>
     </div>
 
     <!-- Floating Badge Sinkronisasi Background -->
@@ -608,9 +612,10 @@
             
             let dailyTotals = {};
             dataRiwayat.forEach(r => {
+                if (!r || !r.timestamp) return;
                 let date = r.timestamp.split(' ')[0]; 
                 if(!dailyTotals[date]) dailyTotals[date] = 0;
-                dailyTotals[date] += r.jumlah;
+                dailyTotals[date] += (r.jumlah || 0);
             });
 
             let sortedDates = Object.keys(dailyTotals).sort();
@@ -618,8 +623,13 @@
 
             let chartData = sortedDates.map(date => dailyTotals[date]);
             let labels = sortedDates.map(date => {
-                let d = new Date(date);
-                return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                try {
+                    let d = new Date(date);
+                    if (isNaN(d.getTime())) return date;
+                    return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+                } catch(e) {
+                    return date;
+                }
             });
 
             if(dailyChartInstance) dailyChartInstance.destroy();
@@ -1087,36 +1097,100 @@
             });
         }
 
-        // --- PROSES FETCH AWAL (HANYA SEKALI SAAT BUKA WEB) ---
-        function loadDataFromSheets() {
+        // --- PROSES FETCH AWAL DENGAN TIMEOUT & CACHE AMAN ---
+        async function loadDataFromSheets() {
             showLoading(true);
-            Promise.all([
-                fetch(SCRIPT_URL + '?action=getRiwayat').then(res => res.json()),
-                fetch(SCRIPT_URL + '?action=getDataSiswa').then(res => res.json()),
-                fetch(SCRIPT_URL + '?action=getPengumuman').then(res => res.json())
-            ])
-            .then(([riwayatRes, siswaRes, pengumumanRes]) => {
-                if(riwayatRes.status === 'success' && siswaRes.status === 'success') {
-                    dataRiwayat = riwayatRes.data;
-                    dataSiswa = siswaRes.data;
+
+            // 1. Tampilkan data dari Cache Lokal terlebih dahulu jika ada
+            const cachedSiswa = localStorage.getItem('tabungan_dataSiswa');
+            const cachedRiwayat = localStorage.getItem('tabungan_dataRiwayat');
+            const cachedPengumuman = localStorage.getItem('tabungan_pengumuman');
+            if (cachedSiswa && cachedRiwayat) {
+                try {
+                    dataSiswa = JSON.parse(cachedSiswa);
+                    dataRiwayat = JSON.parse(cachedRiwayat);
+                    if (cachedPengumuman) {
+                        pengumumanAktif = cachedPengumuman;
+                        const elInp = document.getElementById('inputPengumuman');
+                        const elPrev = document.getElementById('previewPengumumanTeks');
+                        if (elInp) elInp.value = pengumumanAktif;
+                        if (elPrev) elPrev.textContent = pengumumanAktif;
+                    }
+                    refreshAllViews();
+                } catch (e) {
+                    console.warn("Gagal membaca cache:", e);
+                }
+            }
+
+            // Batas waktu paksa: Maksimal 6 detik loading overlay WAJIB tertutup
+            const forceCloseTimer = setTimeout(() => {
+                showLoading(false);
+            }, 6000);
+
+            const controller = new AbortController();
+            const fetchTimeout = setTimeout(() => controller.abort(), 5500);
+
+            try {
+                // 2. Ambil data gabungan sekaligus (Cepat & Anti-Hang)
+                const res = await fetch(SCRIPT_URL + '?action=getAllData', {
+                    signal: controller.signal,
+                    cache: 'no-cache'
+                });
+                const resData = await res.json();
+
+                if (resData.status === 'success' && resData.data) {
+                    dataSiswa = resData.data.siswa || [];
+                    dataRiwayat = resData.data.riwayat || [];
+                    pengumumanAktif = resData.data.pengumuman || "Selamat datang di Sistem Tabungan Santri.";
+
+                    // Perbarui cache
+                    localStorage.setItem('tabungan_dataSiswa', JSON.stringify(dataSiswa));
+                    localStorage.setItem('tabungan_dataRiwayat', JSON.stringify(dataRiwayat));
+                    localStorage.setItem('tabungan_pengumuman', pengumumanAktif);
+
+                    const elInp = document.getElementById('inputPengumuman');
+                    const elPrev = document.getElementById('previewPengumumanTeks');
+                    if (elInp) elInp.value = pengumumanAktif;
+                    if (elPrev) elPrev.textContent = pengumumanAktif;
+
                     refreshAllViews();
                 } else {
-                    throw new Error("Gagal memuat data santri/riwayat");
+                    throw new Error("Gagal memuat paket data");
                 }
+            } catch (err) {
+                console.warn("Mencoba fallback request satuan...", err);
+                try {
+                    // Fallback jika backend lama masih menggunakan aksi terpisah
+                    const [riwayatRes, siswaRes, pengumumanRes] = await Promise.all([
+                        fetch(SCRIPT_URL + '?action=getRiwayat', { signal: controller.signal }).then(r => r.json()).catch(() => ({ status: 'error' })),
+                        fetch(SCRIPT_URL + '?action=getDataSiswa', { signal: controller.signal }).then(r => r.json()).catch(() => ({ status: 'error' })),
+                        fetch(SCRIPT_URL + '?action=getPengumuman', { signal: controller.signal }).then(r => r.json()).catch(() => ({ status: 'error' }))
+                    ]);
 
-                if(pengumumanRes && pengumumanRes.status === 'success') {
-                    pengumumanAktif = pengumumanRes.data || "Selamat datang di Sistem Tabungan Santri.";
-                    document.getElementById('inputPengumuman').value = pengumumanAktif;
-                    document.getElementById('previewPengumumanTeks').textContent = pengumumanAktif;
+                    if (siswaRes && siswaRes.status === 'success') {
+                        dataSiswa = siswaRes.data || [];
+                        localStorage.setItem('tabungan_dataSiswa', JSON.stringify(dataSiswa));
+                    }
+                    if (riwayatRes && riwayatRes.status === 'success') {
+                        dataRiwayat = riwayatRes.data || [];
+                        localStorage.setItem('tabungan_dataRiwayat', JSON.stringify(dataRiwayat));
+                    }
+                    if (pengumumanRes && pengumumanRes.status === 'success') {
+                        pengumumanAktif = pengumumanRes.data || "Selamat datang di Sistem Tabungan Santri.";
+                        const elInp = document.getElementById('inputPengumuman');
+                        const elPrev = document.getElementById('previewPengumumanTeks');
+                        if (elInp) elInp.value = pengumumanAktif;
+                        if (elPrev) elPrev.textContent = pengumumanAktif;
+                    }
+                    refreshAllViews();
+                } catch (fallbackErr) {
+                    showToast("Server sedang sibuk. Menggunakan data tersimpan.", "error");
                 }
-            })
-            .catch(error => {
-                showToast(`Koneksi Error: Pastikan URL valid dan internet lancar.`, 'error');
-                console.error("Fetch Data Error: ", error);
-            })
-            .finally(() => {
+            } finally {
+                clearTimeout(forceCloseTimer);
+                clearTimeout(fetchTimeout);
                 showLoading(false);
-            });
+            }
         }
 
         window.onload = () => {
