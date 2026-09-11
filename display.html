@@ -420,6 +420,68 @@
             box-shadow: 0 0 15px rgba(239, 68, 68, 0.35);
         }
 
+        /* Slide Foto Galeri GitHub */
+        .slide-foto-box {
+            display: none;
+            width: 100%;
+            height: 100%;
+            border-radius: 20px;
+            border: 2px solid #0284c7;
+            overflow: hidden;
+            position: relative;
+            background: #090e1a;
+            box-shadow: 0 12px 35px rgba(2, 132, 199, 0.25);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .foto-slide-img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            transition: opacity 0.5s ease-in-out;
+            opacity: 1;
+        }
+
+        .foto-badge {
+            position: absolute;
+            top: 20px;
+            left: 24px;
+            background: rgba(15, 23, 42, 0.88);
+            border: 1px solid #38bdf8;
+            color: #38bdf8;
+            padding: 8px 18px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            z-index: 10;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+        }
+
+        .foto-counter {
+            position: absolute;
+            bottom: 20px;
+            right: 24px;
+            background: rgba(15, 23, 42, 0.88);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #ffffff;
+            padding: 6px 16px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            font-weight: 800;
+            font-family: 'Inter', monospace;
+            z-index: 10;
+        }
+
+        .slide-pill.active.pill-foto {
+            border-color: #38bdf8;
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.35);
+        }
+
         /* Loading & Empty State */
         .loading-box {
             flex: 1;
@@ -503,6 +565,16 @@
             </div>
         </div>
 
+        <!-- SLIDE 4: GALERI FOTO GITHUB -->
+        <div class="slide-foto-box" id="fotoContainer">
+            <div class="foto-badge">
+                <i class="fas fa-images"></i>
+                <span>DOKUMENTASI & GALERI PONDOK</span>
+            </div>
+            <img id="slideFotoImg" class="foto-slide-img" src="" alt="Slide Foto Dokumentasi">
+            <div class="foto-counter" id="slideFotoCounter">1 / 3</div>
+        </div>
+
     </main>
 
     <footer class="footer-bar">
@@ -518,6 +590,10 @@
             <i class="fas fa-bullhorn"></i>
             <span>Pengumuman Pondok</span>
         </div>
+        <div class="slide-pill pill-foto" id="pill-foto">
+            <i class="fas fa-images"></i>
+            <span>Galeri Foto</span>
+        </div>
     </footer>
 
     <script>
@@ -531,19 +607,60 @@
             return str.replace(/[0-9]/g, 'X');
         };
 
-        let currentView = 'siswa'; // 'siswa' -> 'kelas' -> 'pengumuman'
+        let currentView = 'siswa'; // 'siswa' -> 'kelas' -> 'pengumuman' -> 'foto'
         let dataGlobal = [];
         let pengumumanGlobal = "Selamat datang di Sistem Tabungan Santri. Terus tingkatkan semangat menabung Anda!";
+
+        // =====================================================================
+        // KONFIGURASI FOTO GITHUB
+        // =====================================================================
+        const GITHUB_RAW_BASE = "https://raw.githubusercontent.com/smpqtyq1lilbanat-jpg/tabungan/refs/heads/main/"; 
+        const daftarFoto = ["1.jpeg", "2.jpeg", "3.jpeg"];
+        let currentFotoIndex = 0;
+        let fotoSubInterval = null;
 
         // Update indikator pill di bawah
         function updateSlideIndicators() {
             const pillSiswa = document.getElementById('pill-siswa');
             const pillKelas = document.getElementById('pill-kelas');
             const pillPengumuman = document.getElementById('pill-pengumuman');
+            const pillFoto = document.getElementById('pill-foto');
 
             if (pillSiswa) pillSiswa.classList.toggle('active', currentView === 'siswa');
             if (pillKelas) pillKelas.classList.toggle('active', currentView === 'kelas');
             if (pillPengumuman) pillPengumuman.classList.toggle('active', currentView === 'pengumuman');
+            if (pillFoto) pillFoto.classList.toggle('active', currentView === 'foto');
+        }
+
+        function tampilkanFotoAktif() {
+            const imgEl = document.getElementById('slideFotoImg');
+            const counterEl = document.getElementById('slideFotoCounter');
+            if (!imgEl || daftarFoto.length === 0) return;
+
+            const targetFile = daftarFoto[currentFotoIndex];
+            const fullUrl = targetFile.startsWith('http') ? targetFile : (GITHUB_RAW_BASE + targetFile);
+
+            imgEl.style.opacity = '0';
+            setTimeout(() => {
+                imgEl.src = fullUrl;
+                // Fallback otomatis jika ada variasi ekstensi .jpg atau .png
+                imgEl.onerror = function() {
+                    if (!this.dataset.fallbackCount) {
+                        this.dataset.fallbackCount = "1";
+                        this.src = fullUrl.replace(/\.jpeg$/i, '.jpg');
+                    } else if (this.dataset.fallbackCount === "1") {
+                        this.dataset.fallbackCount = "2";
+                        this.src = fullUrl.replace(/\.jpeg$/i, '.png');
+                    }
+                };
+                imgEl.onload = function() {
+                    this.dataset.fallbackCount = "";
+                    this.style.opacity = '1';
+                };
+                if (counterEl) {
+                    counterEl.textContent = `${currentFotoIndex + 1} / ${daftarFoto.length}`;
+                }
+            }, 300);
         }
 
         function renderView() {
@@ -552,14 +669,47 @@
             const colLeft = document.getElementById('topThreeContainer');
             const colRight = document.getElementById('topOthersContainer');
             const pengumumanBox = document.getElementById('pengumumanContainer');
+            const fotoBox = document.getElementById('fotoContainer');
             const iconBox = document.getElementById('headerIconBox');
 
+            // Hentikan sub-rotasi foto jika beralih ke slide lain
+            if (fotoSubInterval) {
+                clearInterval(fotoSubInterval);
+                fotoSubInterval = null;
+            }
+
             updateSlideIndicators();
+
+            // SLIDE 4: GALERI FOTO GITHUB
+            if (currentView === 'foto') {
+                if (colLeft) colLeft.style.display = 'none';
+                if (colRight) colRight.style.display = 'none';
+                if (pengumumanBox) pengumumanBox.style.display = 'none';
+                if (fotoBox) fotoBox.style.display = 'flex';
+
+                if (mainTitle) mainTitle.textContent = "GALERI DOKUMENTASI";
+                if (subTitle) subTitle.textContent = "Dokumentasi & Aktivitas Santri Pesantren";
+                if (iconBox) {
+                    iconBox.style.background = 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)';
+                    iconBox.innerHTML = '<i class="fas fa-images"></i>';
+                }
+
+                tampilkanFotoAktif();
+
+                // Putar foto 1 -> 2 -> 3 setiap 6.5 detik selama slide foto aktif
+                fotoSubInterval = setInterval(() => {
+                    currentFotoIndex = (currentFotoIndex + 1) % daftarFoto.length;
+                    tampilkanFotoAktif();
+                }, 6500);
+
+                return;
+            }
 
             // SLIDE 3: PENGUMUMAN LAYAR PENUH
             if (currentView === 'pengumuman') {
                 if (colLeft) colLeft.style.display = 'none';
                 if (colRight) colRight.style.display = 'none';
+                if (fotoBox) fotoBox.style.display = 'none';
                 if (pengumumanBox) pengumumanBox.style.display = 'flex';
 
                 if (mainTitle) mainTitle.textContent = "PENGUMUMAN PONDOK";
@@ -580,6 +730,7 @@
             if (colLeft) colLeft.style.display = 'flex';
             if (colRight) colRight.style.display = 'flex';
             if (pengumumanBox) pengumumanBox.style.display = 'none';
+            if (fotoBox) fotoBox.style.display = 'none';
 
             if (iconBox) {
                 iconBox.style.background = 'linear-gradient(135deg, #10b981 0%, #047857 100%)';
@@ -801,12 +952,14 @@
             // Refresh data dari Google Sheets setiap 40 detik
             setInterval(fetchSmartTvData, 40000);
 
-            // Rotasi 3 Slide: Top 10 Santri -> Peringkat Kelas -> Pengumuman (setiap 20 detik)
+            // Rotasi 4 Slide: Top 10 Santri -> Peringkat Kelas -> Pengumuman -> Galeri Foto (setiap 20 detik)
             setInterval(() => {
                 if (currentView === 'siswa') {
                     currentView = 'kelas';
                 } else if (currentView === 'kelas') {
                     currentView = 'pengumuman';
+                } else if (currentView === 'pengumuman') {
+                    currentView = 'foto';
                 } else {
                     currentView = 'siswa';
                 }
