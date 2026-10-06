@@ -662,10 +662,26 @@
         let pengumumanGlobal = "Selamat datang di Sistem Tabungan Santri. Terus tingkatkan semangat menabung dan kedisiplinan Anda!";
 
         const GITHUB_RAW_BASE = "https://raw.githubusercontent.com/smpqtyq1lilbanat-jpg/tabungan/refs/heads/main/"; 
-        const daftarFoto = ["2.jpeg", "3.jpeg", "4.jpeg", "5.jpeg", "6.jpeg", "7.jpeg", "8.jpeg", "9.jpeg", "10.jpeg"];
+        const defaultDaftarFoto = ["2.jpeg", "3.jpeg", "4.jpeg", "5.jpeg", "6.jpeg", "7.jpeg", "8.jpeg", "9.jpeg", "10.jpeg"];
+        let daftarFoto = [];
         let currentFotoIndex = 0;
         let fotoSubInterval = null;
         let slideTransitionTimer = null;
+
+        // Muat daftar foto dinamis dari Dashboard / Cache / Default
+        function muatDaftarFotoDinamis() {
+            const cached = localStorage.getItem('tv_foto_list');
+            if (cached) {
+                try {
+                    const parsed = JSON.parse(cached);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        daftarFoto = parsed.map(item => typeof item === 'string' ? item : item.url);
+                        return;
+                    }
+                } catch(e) {}
+            }
+            daftarFoto = [...defaultDaftarFoto];
+        }
 
         function updateSlideIndicators() {
             const pillSiswa = document.getElementById('pill-siswa');
@@ -686,13 +702,20 @@
             const counterEl = document.getElementById('slideFotoCounter');
             if (!imgEl || daftarFoto.length === 0) return;
 
+            if (currentFotoIndex >= daftarFoto.length) {
+                currentFotoIndex = 0;
+            }
+
             const targetFile = daftarFoto[currentFotoIndex];
-            const fullUrl = targetFile.startsWith('http') ? targetFile : (GITHUB_RAW_BASE + targetFile);
+            const fullUrl = targetFile.startsWith('http') || targetFile.startsWith('data:') 
+                ? targetFile 
+                : (GITHUB_RAW_BASE + targetFile);
 
             imgEl.style.opacity = '0';
             setTimeout(() => {
                 imgEl.src = fullUrl;
                 imgEl.onerror = function() {
+                    if (this.src.startsWith('data:')) return;
                     if (!this.dataset.fallbackCount) {
                         this.dataset.fallbackCount = "1";
                         this.src = fullUrl.replace(/\.jpeg$/i, '.jpg');
@@ -948,10 +971,11 @@
             }
 
             try {
-                const [resSiswa, resRiwayat, resPengumuman] = await Promise.all([
+                const [resSiswa, resRiwayat, resPengumuman, resFoto] = await Promise.all([
                     fetch(`${SCRIPT_URL}?action=getDataSiswa`, { cache: 'no-cache' }).then(r => r.json()).catch(() => null),
                     fetch(`${SCRIPT_URL}?action=getRiwayat`, { cache: 'no-cache' }).then(r => r.json()).catch(() => null),
-                    fetch(`${SCRIPT_URL}?action=getPengumuman`, { cache: 'no-cache' }).then(r => r.json()).catch(() => null)
+                    fetch(`${SCRIPT_URL}?action=getPengumuman`, { cache: 'no-cache' }).then(r => r.json()).catch(() => null),
+                    fetch(`${SCRIPT_URL}?action=getFoto`, { cache: 'no-cache' }).then(r => r.json()).catch(() => null)
                 ]);
 
                 let updated = false;
@@ -959,6 +983,26 @@
                 if (resSiswa && resSiswa.status === 'success' && Array.isArray(resSiswa.data)) {
                     dataGlobal = resSiswa.data;
                     localStorage.setItem('tv_dataGlobal', JSON.stringify(dataGlobal));
+                    updated = true;
+                }
+
+                if (resRiwayat && resRiwayat.status === 'success' && Array.isArray(resRiwayat.data)) {
+                    dataRiwayat = resRiwayat.data;
+                    dataBulanIni = kalkulasiTopBulanIni(dataRiwayat);
+                    localStorage.setItem('tv_dataRiwayat', JSON.stringify(dataRiwayat));
+                    localStorage.setItem('tv_dataBulanIni', JSON.stringify(dataBulanIni));
+                    updated = true;
+                }
+
+                if (resPengumuman && resPengumuman.status === 'success' && resPengumuman.data) {
+                    pengumumanGlobal = resPengumuman.data;
+                    localStorage.setItem('tv_pengumuman', pengumumanGlobal);
+                    updated = true;
+                }
+
+                if (resFoto && resFoto.status === 'success' && Array.isArray(resFoto.data)) {
+                    localStorage.setItem('tv_foto_list', JSON.stringify(resFoto.data));
+                    muatDaftarFotoDinamis();
                     updated = true;
                 }
 
@@ -1067,6 +1111,16 @@
             updateClock();
             setInterval(updateClock, 1000);
             
+            // Muat daftar foto dari sinkronisasi dashboard
+            muatDaftarFotoDinamis();
+
+            // Pasang pendengar event bila admin mengunggah/menghapus foto di tab lain
+            window.addEventListener('storage', (e) => {
+                if (!e.key || e.key === 'tv_foto_list') {
+                    muatDaftarFotoDinamis();
+                }
+            });
+
             // Baca cache terlebih dahulu agar TV langsung tampil seketika
             const cachedData = localStorage.getItem('tv_dataGlobal');
             const cachedBulan = localStorage.getItem('tv_dataBulanIni');
