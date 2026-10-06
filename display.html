@@ -5,12 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Display Smart TV - Tabungan & Pengumuman</title>
     
-    <!-- FontAwesome 6 -->
+    <!-- FontAwesome 6 untuk ikon modern -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <!-- Google Fonts Poppins & Inter -->
+    <!-- Google Fonts Poppins & Inter untuk tampilan tajam di layar TV -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800;900&family=Inter:wght@600;700;800;900&display=swap" rel="stylesheet">
     
-    <!-- CSS MURNI RINGAN & OPTIMAL UNTUK SMART TV -->
     <style>
         * {
             box-sizing: border-box;
@@ -62,7 +61,7 @@
             font-size: 2.1rem;
             color: white;
             box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35);
-            transition: background 0.3s ease;
+            transition: background 0.4s ease;
         }
 
         .header-title-box {
@@ -142,6 +141,13 @@
             border: 1px solid rgba(251, 191, 36, 0.35);
         }
 
+        .sync-error {
+            background-color: rgba(127, 29, 29, 0.65);
+            color: #f87171;
+            border: 1px solid rgba(248, 113, 113, 0.35);
+        }
+
+        /* Container Pembungkus Konten Utama */
         .main-container {
             display: flex;
             flex: 1;
@@ -158,7 +164,6 @@
             min-height: 0;
         }
 
-        /* Top 3 Podium Cards */
         .card-top {
             flex: 1;
             display: flex;
@@ -250,7 +255,6 @@
         .bg-silver .top-amount { color: #f1f5f9; }
         .bg-bronze .top-amount { color: #fed7aa; }
 
-        /* Top 4-10 List Cards */
         .card-list {
             flex: 1;
             display: flex;
@@ -415,12 +419,16 @@
             box-shadow: 0 0 15px rgba(52, 211, 153, 0.3);
         }
 
+        .slide-pill.active.pill-bulan {
+            border-color: #0ea5e9;
+            box-shadow: 0 0 15px rgba(14, 165, 233, 0.35);
+        }
+
         .slide-pill.active.pill-pengumuman {
             border-color: #ef4444;
             box-shadow: 0 0 15px rgba(239, 68, 68, 0.35);
         }
 
-        /* Slide Foto Galeri GitHub */
         .slide-foto-box {
             display: none;
             width: 100%;
@@ -439,7 +447,7 @@
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
-            transition: opacity 0.5s ease-in-out;
+            transition: opacity 0.4s ease-in-out;
             opacity: 1;
         }
 
@@ -482,7 +490,6 @@
             box-shadow: 0 0 15px rgba(56, 189, 248, 0.35);
         }
 
-        /* Loading & Empty State */
         .loading-box {
             flex: 1;
             display: flex;
@@ -536,7 +543,7 @@
         <div class="col-left" id="topThreeContainer">
             <div class="loading-box">
                 <i class="fas fa-spinner fa-spin"></i>
-                <p>Memuat Data Santri...</p>
+                <p>Memuat Data Spreadsheet...</p>
             </div>
         </div>
 
@@ -556,12 +563,12 @@
             </div>
             <div class="pengumuman-content">
                 <div class="pengumuman-text" id="slidePengumumanText">
-                    Selamat datang di Sistem Tabungan Santri. Terus tingkatkan semangat menabung Anda!
+                    Memuat pengumuman resmi pesantren...
                 </div>
             </div>
             <div class="pengumuman-footer-note">
                 <span><i class="fas fa-broadcast-tower mr-2"></i> Siaran Smart TV Pesantren</span>
-                <span id="pengumumanUpdateTag">PENGUMUMAN AKTIF</span>
+                <span id="pengumumanUpdateTag">DATABASE LIVE</span>
             </div>
         </div>
 
@@ -572,7 +579,7 @@
                 <span>DOKUMENTASI & GALERI PONDOK</span>
             </div>
             <img id="slideFotoImg" class="foto-slide-img" src="" alt="Slide Foto Dokumentasi">
-            <div class="foto-counter" id="slideFotoCounter">1 / 3</div>
+            <div class="foto-counter" id="slideFotoCounter">1 / 9</div>
         </div>
 
     </main>
@@ -580,7 +587,11 @@
     <footer class="footer-bar">
         <div class="slide-pill active" id="pill-siswa">
             <i class="fas fa-user-graduate"></i>
-            <span>Top 10 Santri</span>
+            <span>Top 10 Total</span>
+        </div>
+        <div class="slide-pill pill-bulan" id="pill-siswa-bulan">
+            <i class="fas fa-calendar-check"></i>
+            <span>Top 10 Bulan Ini</span>
         </div>
         <div class="slide-pill" id="pill-kelas">
             <i class="fas fa-users"></i>
@@ -597,7 +608,16 @@
     </footer>
 
     <script>
+        // =====================================================================
+        // KONFIGURASI DATABASE GOOGLE SPREADSHEET
+        // =====================================================================
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0jQYSSfrN2dD8Wb4kaul0eItZ5tEG5jHO-6yN_UXnSHDxyif0adevn_fhudLBJmYB4w/exec';
+
+        // =====================================================================
+        // KONFIGURASI DURASI WAKTU (DALAM MILIDETIK)
+        // =====================================================================
+        const DURASI_SLIDE_BIASA = 5000; // 5 detik per slide biasa (Top Total, Bulan Ini, Kelas, Pengumuman)
+        const DURASI_PER_FOTO = 3500;    // 3.5 detik per lembar foto di dalam galeri
 
         // Format angka dengan opsi sensor privasi
         const formatNumber = (angka, isMasked) => {
@@ -607,26 +627,55 @@
             return str.replace(/[0-9]/g, 'X');
         };
 
-        let currentView = 'siswa'; // 'siswa' -> 'kelas' -> 'pengumuman' -> 'foto'
-        let dataGlobal = [];
-        let pengumumanGlobal = "Selamat datang di Sistem Tabungan Santri. Terus tingkatkan semangat menabung Anda!";
+        // Fungsi rentang tanggal cut-off 18 s.d. 17
+        function getPeriodeCutOff() {
+            const now = new Date();
+            const todayDate = now.getDate();
+            let startDate, endDate;
 
-        // =====================================================================
-        // KONFIGURASI FOTO GITHUB
-        // =====================================================================
+            if (todayDate >= 18) {
+                startDate = new Date(now.getFullYear(), now.getMonth(), 18, 0, 0, 0);
+                endDate = new Date(now.getFullYear(), now.getMonth() + 1, 17, 23, 59, 59);
+            } else {
+                startDate = new Date(now.getFullYear(), now.getMonth() - 1, 18, 0, 0, 0);
+                endDate = new Date(now.getFullYear(), now.getMonth(), 17, 23, 59, 59);
+            }
+            return { startDate, endDate };
+        }
+
+        // Label teks periode dinamis
+        function getPeriodeBulanIniLabel() {
+            const { startDate, endDate } = getPeriodeCutOff();
+            const bulanIndo = [
+                'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+                'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+            ];
+            const startStr = `18 ${bulanIndo[startDate.getMonth()]} ${startDate.getFullYear() !== endDate.getFullYear() ? startDate.getFullYear() : ''}`.trim();
+            const endStr = `17 ${bulanIndo[endDate.getMonth()]} ${endDate.getFullYear()}`;
+            return `Periode: ${startStr} s.d. ${endStr}`;
+        }
+
+        let currentView = 'siswa'; // 'siswa' -> 'siswa_bulan' -> 'kelas' -> 'pengumuman' -> 'foto'
+        let dataGlobal = [];      // Berisi data dari getDataSiswa (DATA SISWA)
+        let dataRiwayat = [];     // Berisi data dari getRiwayat (LOG MENABUNG)
+        let dataBulanIni = [];    // Hasil agregasi riwayat tgl 18 s.d. 17
+        let pengumumanGlobal = "Selamat datang di Sistem Tabungan Santri. Terus tingkatkan semangat menabung dan kedisiplinan Anda!";
+
         const GITHUB_RAW_BASE = "https://raw.githubusercontent.com/smpqtyq1lilbanat-jpg/tabungan/refs/heads/main/"; 
-        const daftarFoto = [ "2.jpeg", "3.jpeg", "4.jpeg", "5.jpeg", "6.jpeg", "7.jpeg", "8.jpeg", "9.jpeg", "10.jpeg"];
+        const daftarFoto = ["2.jpeg", "3.jpeg", "4.jpeg", "5.jpeg", "6.jpeg", "7.jpeg", "8.jpeg", "9.jpeg", "10.jpeg"];
         let currentFotoIndex = 0;
         let fotoSubInterval = null;
+        let slideTransitionTimer = null;
 
-        // Update indikator pill di bawah
         function updateSlideIndicators() {
             const pillSiswa = document.getElementById('pill-siswa');
+            const pillSiswaBulan = document.getElementById('pill-siswa-bulan');
             const pillKelas = document.getElementById('pill-kelas');
             const pillPengumuman = document.getElementById('pill-pengumuman');
             const pillFoto = document.getElementById('pill-foto');
 
             if (pillSiswa) pillSiswa.classList.toggle('active', currentView === 'siswa');
+            if (pillSiswaBulan) pillSiswaBulan.classList.toggle('active', currentView === 'siswa_bulan');
             if (pillKelas) pillKelas.classList.toggle('active', currentView === 'kelas');
             if (pillPengumuman) pillPengumuman.classList.toggle('active', currentView === 'pengumuman');
             if (pillFoto) pillFoto.classList.toggle('active', currentView === 'foto');
@@ -643,7 +692,6 @@
             imgEl.style.opacity = '0';
             setTimeout(() => {
                 imgEl.src = fullUrl;
-                // Fallback otomatis jika ada variasi ekstensi .jpg atau .png
                 imgEl.onerror = function() {
                     if (!this.dataset.fallbackCount) {
                         this.dataset.fallbackCount = "1";
@@ -660,7 +708,38 @@
                 if (counterEl) {
                     counterEl.textContent = `${currentFotoIndex + 1} / ${daftarFoto.length}`;
                 }
-            }, 300);
+            }, 250);
+        }
+
+        // Kalkulasi Top 10 Bulan Ini langsung dari LOG MENABUNG (tgl 18 s.d. 17)
+        function kalkulasiTopBulanIni(riwayatList) {
+            if (!Array.isArray(riwayatList) || riwayatList.length === 0) return [];
+            
+            const { startDate, endDate } = getPeriodeCutOff();
+            const sumMap = {};
+
+            riwayatList.forEach(item => {
+                if (!item.timestamp || item.timestamp === '-') return;
+                
+                const tgl = new Date(item.timestamp.replace(' ', 'T'));
+                if (isNaN(tgl.getTime())) return;
+
+                if (tgl >= startDate && tgl <= endDate) {
+                    const identifier = item.nis ? `NIS_${item.nis}` : `${item.nama}_${item.kelas}`;
+                    if (!sumMap[identifier]) {
+                        sumMap[identifier] = {
+                            nama: item.nama,
+                            kelas: item.kelas,
+                            tabungan: 0
+                        };
+                    }
+                    sumMap[identifier].tabungan += Number(item.jumlah) || 0;
+                }
+            });
+
+            return Object.values(sumMap)
+                .sort((a, b) => b.tabungan - a.tabungan)
+                .slice(0, 10);
         }
 
         function renderView() {
@@ -671,12 +750,6 @@
             const pengumumanBox = document.getElementById('pengumumanContainer');
             const fotoBox = document.getElementById('fotoContainer');
             const iconBox = document.getElementById('headerIconBox');
-
-            // Hentikan sub-rotasi foto jika beralih ke slide lain
-            if (fotoSubInterval) {
-                clearInterval(fotoSubInterval);
-                fotoSubInterval = null;
-            }
 
             updateSlideIndicators();
 
@@ -694,15 +767,22 @@
                     iconBox.innerHTML = '<i class="fas fa-images"></i>';
                 }
 
-                tampilkanFotoAktif();
-
-                // Putar foto 1 -> 2 -> 3 setiap 6.5 detik selama slide foto aktif
-                fotoSubInterval = setInterval(() => {
-                    currentFotoIndex = (currentFotoIndex + 1) % daftarFoto.length;
+                // Hanya pasang rotasi foto jika belum aktif
+                if (!fotoSubInterval) {
+                    currentFotoIndex = 0;
                     tampilkanFotoAktif();
-                }, 6500);
-
+                    fotoSubInterval = setInterval(() => {
+                        currentFotoIndex = (currentFotoIndex + 1) % daftarFoto.length;
+                        tampilkanFotoAktif();
+                    }, DURASI_PER_FOTO);
+                }
                 return;
+            }
+
+            // Hentikan sub-rotasi foto jika beralih ke slide lain
+            if (fotoSubInterval) {
+                clearInterval(fotoSubInterval);
+                fotoSubInterval = null;
             }
 
             // SLIDE 3: PENGUMUMAN LAYAR PENUH
@@ -721,43 +801,63 @@
 
                 const textEl = document.getElementById('slidePengumumanText');
                 if (textEl) {
-                    textEl.textContent = pengumumanGlobal || "Tidak ada pengumuman baru saat ini.";
+                    textEl.textContent = pengumumanGlobal || "Tidak ada pengumuman aktif saat ini.";
                 }
                 return;
             }
 
-            // SLIDE 1 & 2: TABUNGAN
+            // SLIDE TABUNGAN
             if (colLeft) colLeft.style.display = 'flex';
             if (colRight) colRight.style.display = 'flex';
             if (pengumumanBox) pengumumanBox.style.display = 'none';
             if (fotoBox) fotoBox.style.display = 'none';
 
-            if (iconBox) {
-                iconBox.style.background = 'linear-gradient(135deg, #10b981 0%, #047857 100%)';
-                iconBox.innerHTML = '<i class="fas fa-piggy-bank"></i>';
-            }
-
-            if (!dataGlobal || dataGlobal.length === 0) {
-                // Tampilkan pesan kosong jika belum ada data sama sekali
-                drawCards([], currentView);
-                return;
-            }
-
+            // SLIDE 1: TOTAL KESELURUHAN SANTRI
             if (currentView === 'siswa') {
-                if (mainTitle) mainTitle.textContent = "TOP 10 PENABUNG";
-                if (subTitle) subTitle.textContent = "Peringkat Individu Santri";
+                if (iconBox) {
+                    iconBox.style.background = 'linear-gradient(135deg, #10b981 0%, #047857 100%)';
+                    iconBox.innerHTML = '<i class="fas fa-piggy-bank"></i>';
+                }
+                if (mainTitle) mainTitle.textContent = "TOP 10 PENABUNG (TOTAL)";
+                if (subTitle) subTitle.textContent = "Peringkat Akumulasi Saldo Santri";
+                
+                if (!dataGlobal || dataGlobal.length === 0) {
+                    drawCards([], currentView);
+                    return;
+                }
                 const top10 = [...dataGlobal].sort((a, b) => b.tabungan - a.tabungan).slice(0, 10);
                 drawCards(top10, 'siswa');
-            } else if (currentView === 'kelas') {
+            }
+            // SLIDE 2: TOP 10 BULAN INI (CUT-OFF 18 S.D. 17)
+            else if (currentView === 'siswa_bulan') {
+                if (iconBox) {
+                    iconBox.style.background = 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)';
+                    iconBox.innerHTML = '<i class="fas fa-calendar-check"></i>';
+                }
+                if (mainTitle) mainTitle.textContent = "TOP 10 BULAN INI";
+                if (subTitle) subTitle.textContent = getPeriodeBulanIniLabel();
+
+                const topBulanIni = (dataBulanIni && dataBulanIni.length > 0) 
+                    ? dataBulanIni 
+                    : (dataGlobal && dataGlobal.length > 0 ? [...dataGlobal].sort((a,b) => b.tabungan - a.tabungan).slice(0, 10) : []);
+
+                drawCards(topBulanIni, 'siswa');
+            }
+            // SLIDE 3: PERINGKAT KELAS
+            else if (currentView === 'kelas') {
+                if (iconBox) {
+                    iconBox.style.background = 'linear-gradient(135deg, #10b981 0%, #047857 100%)';
+                    iconBox.innerHTML = '<i class="fas fa-users"></i>';
+                }
                 if (mainTitle) mainTitle.textContent = "PERINGKAT KELAS";
                 if (subTitle) subTitle.textContent = "Akumulasi Tabungan per Kelas";
                 
                 const kelasMap = {};
-                dataGlobal.forEach(s => {
+                (dataGlobal || []).forEach(s => {
                     let k = (s.kelas || '').trim().toUpperCase();
                     if(k) {
                         if(!kelasMap[k]) kelasMap[k] = 0;
-                        kelasMap[k] += (s.tabungan || 0);
+                        kelasMap[k] += (Number(s.tabungan) || 0);
                     }
                 });
 
@@ -784,13 +884,13 @@
                 containerLeft.innerHTML = `
                     <div class="loading-box">
                         <i class="fas fa-inbox"></i>
-                        <p>Belum Ada Data Tabungan</p>
+                        <p>Menunggu Data Database</p>
                     </div>
                 `;
                 containerRight.innerHTML = `
                     <div class="loading-box">
                         <i class="fas fa-info-circle"></i>
-                        <p>Data Masih Kosong</p>
+                        <p>Belum Ada Catatan Transaksi</p>
                     </div>
                 `;
                 return;
@@ -847,28 +947,40 @@
                 syncStatus.innerHTML = '<i class="fas fa-sync-alt fa-spin"></i> SINKRON';
             }
 
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 6500);
-
             try {
-                const res = await fetch(SCRIPT_URL + '?action=getAllData', {
-                    signal: controller.signal,
-                    cache: 'no-cache'
-                });
-                const response = await res.json();
-                clearTimeout(timeoutId);
+                const [resSiswa, resRiwayat, resPengumuman] = await Promise.all([
+                    fetch(`${SCRIPT_URL}?action=getDataSiswa`, { cache: 'no-cache' }).then(r => r.json()).catch(() => null),
+                    fetch(`${SCRIPT_URL}?action=getRiwayat`, { cache: 'no-cache' }).then(r => r.json()).catch(() => null),
+                    fetch(`${SCRIPT_URL}?action=getPengumuman`, { cache: 'no-cache' }).then(r => r.json()).catch(() => null)
+                ]);
 
-                if (response.status === 'success' && response.data) {
-                    dataGlobal = response.data.siswa || [];
-                    if (response.data.pengumuman) {
-                        pengumumanGlobal = response.data.pengumuman;
-                    }
-                    
+                let updated = false;
+
+                if (resSiswa && resSiswa.status === 'success' && Array.isArray(resSiswa.data)) {
+                    dataGlobal = resSiswa.data;
                     localStorage.setItem('tv_dataGlobal', JSON.stringify(dataGlobal));
+                    updated = true;
+                }
+
+                if (resRiwayat && resRiwayat.status === 'success' && Array.isArray(resRiwayat.data)) {
+                    dataRiwayat = resRiwayat.data;
+                    dataBulanIni = kalkulasiTopBulanIni(dataRiwayat);
+                    localStorage.setItem('tv_dataRiwayat', JSON.stringify(dataRiwayat));
+                    localStorage.setItem('tv_dataBulanIni', JSON.stringify(dataBulanIni));
+                    updated = true;
+                }
+
+                if (resPengumuman && resPengumuman.status === 'success' && resPengumuman.data) {
+                    pengumumanGlobal = resPengumuman.data;
                     localStorage.setItem('tv_pengumuman', pengumumanGlobal);
+                    updated = true;
+                }
 
-                    renderView();
-
+                if (updated) {
+                    // Update tampilan data bila tidak sedang di slide foto
+                    if (currentView !== 'foto') {
+                        renderView();
+                    }
                     const now = new Date();
                     const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(/\./g, ':');
                     if (syncStatus) {
@@ -877,45 +989,30 @@
                     }
                     return;
                 }
-                throw new Error("Format respons tidak valid");
+                throw new Error("Respons API kosong atau tidak sesuai");
             } catch (err) {
-                clearTimeout(timeoutId);
-                console.warn("Menggunakan data cache atau fallback satuan...", err);
+                console.warn("Koneksi gagal, memulihkan data dari cache...", err);
+                const cachedData = localStorage.getItem('tv_dataGlobal');
+                const cachedBulan = localStorage.getItem('tv_dataBulanIni');
+                const cachedPengumuman = localStorage.getItem('tv_pengumuman');
 
-                // Fallback request satuan jika script lama belum diperbarui
-                try {
-                    const [resSiswa, resPengumuman] = await Promise.all([
-                        fetch(SCRIPT_URL + '?action=getDataSiswa').then(r => r.json()).catch(() => null),
-                        fetch(SCRIPT_URL + '?action=getPengumuman').then(r => r.json()).catch(() => null)
-                    ]);
+                if (cachedData) {
+                    try { dataGlobal = JSON.parse(cachedData); } catch(e) {}
+                }
+                if (cachedBulan) {
+                    try { dataBulanIni = JSON.parse(cachedBulan); } catch(e) {}
+                }
+                if (cachedPengumuman) {
+                    pengumumanGlobal = cachedPengumuman;
+                }
 
-                    if (resSiswa && resSiswa.status === 'success' && Array.isArray(resSiswa.data)) {
-                        dataGlobal = resSiswa.data;
-                        localStorage.setItem('tv_dataGlobal', JSON.stringify(dataGlobal));
-                    }
-                    if (resPengumuman && resPengumuman.status === 'success' && resPengumuman.data) {
-                        pengumumanGlobal = resPengumuman.data;
-                        localStorage.setItem('tv_pengumuman', pengumumanGlobal);
-                    }
+                if (currentView !== 'foto') {
                     renderView();
-                    if (syncStatus) {
-                        syncStatus.className = 'sync-badge sync-ok';
-                        syncStatus.innerHTML = `<i class="fas fa-check-circle"></i> LIVE`;
-                    }
-                } catch (fallbackErr) {
-                    const cachedData = localStorage.getItem('tv_dataGlobal');
-                    const cachedPengumuman = localStorage.getItem('tv_pengumuman');
-                    if (cachedData) {
-                        try { dataGlobal = JSON.parse(cachedData); } catch(e) {}
-                    }
-                    if (cachedPengumuman) {
-                        pengumumanGlobal = cachedPengumuman;
-                    }
-                    renderView();
-                    if (syncStatus) {
-                        syncStatus.className = 'sync-badge sync-loading';
-                        syncStatus.innerHTML = `<i class="fas fa-wifi"></i> CACHE`;
-                    }
+                }
+
+                if (syncStatus) {
+                    syncStatus.className = 'sync-badge sync-loading';
+                    syncStatus.innerHTML = `<i class="fas fa-wifi"></i> OFFLINE/CACHE`;
                 }
             }
         }
@@ -931,40 +1028,69 @@
             if (dateEl) dateEl.innerText = now.toLocaleDateString('id-ID', options).toUpperCase();
         }
 
+        // =====================================================================
+        // MANAJER TRANSISI SLIDE DENGAN DURASI DINAMIS
+        // =====================================================================
+        function jadwalkanSlideBerikutnya() {
+            if (slideTransitionTimer) {
+                clearTimeout(slideTransitionTimer);
+                slideTransitionTimer = null;
+            }
+
+            // Urutan perpindahan slide
+            if (currentView === 'siswa') {
+                currentView = 'siswa_bulan';
+            } else if (currentView === 'siswa_bulan') {
+                currentView = 'kelas';
+            } else if (currentView === 'kelas') {
+                currentView = 'pengumuman';
+            } else if (currentView === 'pengumuman') {
+                currentView = 'foto';
+            } else {
+                currentView = 'siswa';
+            }
+
+            renderView();
+
+            // Durasi slide dinamis:
+            // - Khusus Galeri Foto: diperpanjang sesuai jumlah foto (daftarFoto * DURASI_PER_FOTO)
+            // - Slide Lain: 5 detik
+            let durasiAktif = DURASI_SLIDE_BIASA;
+            if (currentView === 'foto') {
+                durasiAktif = Math.max(daftarFoto.length * DURASI_PER_FOTO, 20000);
+            }
+
+            slideTransitionTimer = setTimeout(jadwalkanSlideBerikutnya, durasiAktif);
+        }
+
         window.onload = () => {
             updateClock();
             setInterval(updateClock, 1000);
             
-            // Baca cache terlebih dahulu agar TV tidak kosong sedetik pun saat dinyalakan
+            // Baca cache terlebih dahulu agar TV langsung tampil seketika
             const cachedData = localStorage.getItem('tv_dataGlobal');
+            const cachedBulan = localStorage.getItem('tv_dataBulanIni');
             const cachedPengumuman = localStorage.getItem('tv_pengumuman');
+
             if (cachedData) {
                 try { dataGlobal = JSON.parse(cachedData); } catch(e) {}
+            }
+            if (cachedBulan) {
+                try { dataBulanIni = JSON.parse(cachedBulan); } catch(e) {}
             }
             if (cachedPengumuman) {
                 pengumumanGlobal = cachedPengumuman;
             }
             renderView();
 
-            // Panggilan pertama ke server
+            // Panggilan data live pertama ke Google Spreadsheet
             fetchSmartTvData();
 
-            // Refresh data dari Google Sheets setiap 40 detik
-            setInterval(fetchSmartTvData, 40000);
+            // Sinkronisasi otomatis setiap 30 detik ke database Google Sheets
+            setInterval(fetchSmartTvData, 30000);
 
-            // Rotasi 4 Slide: Top 10 Santri -> Peringkat Kelas -> Pengumuman -> Galeri Foto (setiap 20 detik)
-            setInterval(() => {
-                if (currentView === 'siswa') {
-                    currentView = 'kelas';
-                } else if (currentView === 'kelas') {
-                    currentView = 'pengumuman';
-                } else if (currentView === 'pengumuman') {
-                    currentView = 'foto';
-                } else {
-                    currentView = 'siswa';
-                }
-                renderView();
-            }, 20000);
+            // Mulai transisi otomatis (slide pertama berjalan selama 5 detik)
+            slideTransitionTimer = setTimeout(jadwalkanSlideBerikutnya, DURASI_SLIDE_BIASA);
         };
     </script>
 </body>
