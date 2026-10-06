@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Galeri Smart TV - Pesantren</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#ecfdf5',
+                            100: '#d1fae5',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                            900: '#064e3b',
+                        },
+                        dark: {
+                            800: '#1e293b',
+                            850: '#172033',
+                            900: '#0f172a',
+                            950: '#0b1120'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Poppins', 'Inter', 'sans-serif'],
+                        mono: ['Inter', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome 6 Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts Poppins & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            -webkit-font-smoothing: antialiased;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        .dragover-active {
+            border-color: #10b981 !important;
+            background-color: rgba(16, 185, 129, 0.08) !important;
+            transform: scale(1.01);
+        }
+    </style>
+</head>
+<body class="bg-dark-950 text-slate-100 min-h-screen flex flex-col font-sans selection:bg-brand-500 selection:text-white">
+
+    <!-- TOP NAVIGATION BAR -->
+    <header class="bg-dark-900/90 backdrop-blur border-b border-slate-800 sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white shadow-lg shadow-brand-500/20 text-2xl">
+                    <i class="fas fa-photo-film"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+                        Galeri Smart TV
+                        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">Admin Panel</span>
+                    </h1>
+                    <p class="text-xs text-slate-400 font-medium">Sistem Pengelola Foto Dokumentasi Pesantren</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <div id="connectionBadge" class="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-950/60 border border-emerald-500/30 text-emerald-400">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="connectionText">Tersambung ke Database</span>
+                </div>
+                <button onclick="toggleSettingsModal()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs font-semibold transition flex items-center gap-2 shadow-sm" title="Pengaturan URL Backend">
+                    <i class="fas fa-sliders text-emerald-400"></i>
+                    <span class="hidden md:inline">Konfigurasi API</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+        
+        <!-- STATS & INFO BAR -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-dark-900 border border-slate-800 p-5 rounded-2xl flex items-center justify-between shadow-lg shadow-black/20">
+                <div>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Foto Tayang</p>
+                    <h3 id="statTotalFoto" class="text-3xl font-extrabold text-white mt-1">0</h3>
+                    <p class="text-xs text-emerald-400 mt-1 font-medium"><i class="fas fa-tv mr-1"></i> Aktif di Smart TV</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center text-xl">
+                    <i class="fas fa-images"></i>
+                </div>
+            </div>
+
+            <div class="bg-dark-900 border border-slate-800 p-5 rounded-2xl flex items-center justify-between shadow-lg shadow-black/20">
+                <div>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Durasi Putar TV</p>
+                    <h3 id="statDurasiPutar" class="text-3xl font-extrabold text-white mt-1">0 dtk</h3>
+                    <p class="text-xs text-slate-400 mt-1 font-medium"><i class="fas fa-clock mr-1"></i> @3.5 detik per foto</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-xl">
+                    <i class="fas fa-rotate"></i>
+                </div>
+            </div>
+
+            <div class="bg-dark-900 border border-slate-800 p-5 rounded-2xl flex items-center justify-between shadow-lg shadow-black/20">
+                <div>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Sinkronisasi</p>
+                    <h3 id="statTerakhirUpdate" class="text-lg font-bold text-white mt-2 font-mono">--:--</h3>
+                    <p class="text-xs text-emerald-400 mt-1 font-medium"><i class="fas fa-check mr-1"></i> Status Real-time</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-xl">
+                    <i class="fas fa-cloud-arrow-up"></i>
+                </div>
+            </div>
+
+            <div class="bg-dark-900 border border-slate-800 p-5 rounded-2xl flex items-center justify-between shadow-lg shadow-black/20">
+                <div>
+                    <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Mode Smart TV</p>
+                    <h3 class="text-xl font-bold text-white mt-1">Otomatis</h3>
+                    <p class="text-xs text-sky-400 mt-1 font-medium"><i class="fas fa-desktop mr-1"></i> Format Resolusi 16:9</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-xl">
+                    <i class="fas fa-display"></i>
+                </div>
+            </div>
+        </section>
+
+        <!-- UPLOAD SECTION -->
+        <section class="bg-dark-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl shadow-black/30">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-slate-800 pb-5">
+                <div>
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="fas fa-cloud-arrow-up text-brand-500"></i>
+                        Unggah Foto Dokumentasi Baru
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Mendukung format JPG, PNG, WEBP. Otomatis dikompresi untuk performa TV.</p>
+                </div>
+                <span class="text-xs font-medium text-slate-400 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700/60 self-start sm:self-auto">
+                    <i class="fas fa-info-circle text-blue-400 mr-1"></i> Rekomendasi: Rasio 16:9
+                </span>
+            </div>
+
+            <!-- DRAG AND DROP ZONE -->
+            <div id="dropZone" class="border-2 border-dashed border-slate-700 hover:border-brand-500 rounded-2xl p-8 sm:p-10 text-center transition duration-200 cursor-pointer bg-dark-850/60 group relative overflow-hidden">
+                <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/jpg" class="hidden">
+                
+                <div id="uploadPlaceholder" class="space-y-4">
+                    <div class="w-16 h-16 mx-auto rounded-2xl bg-brand-500/10 text-brand-500 flex items-center justify-center text-2xl group-hover:scale-110 transition duration-200 shadow-inner">
+                        <i class="fas fa-image"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-semibold text-slate-200">
+                            Tarik & letakkan foto di sini, atau <span class="text-brand-500 underline font-bold">pilih dari perangkat</span>
+                        </p>
+                        <p class="text-xs text-slate-400 mt-1">Ukuran maksimal file mentah: 15 MB (akan dioptimalkan otomatis)</p>
+                    </div>
+                </div>
+
+                <!-- PREVIEW CONTAINER BEFORE UPLOAD -->
+                <div id="previewContainer" class="hidden flex-col md:flex-row items-center justify-center gap-6 text-left">
+                    <div class="relative w-48 h-32 rounded-xl overflow-hidden border-2 border-brand-500/60 shadow-lg bg-black flex-shrink-0">
+                        <img id="previewImage" src="" alt="Pratinjau" class="w-full h-full object-cover">
+                        <button type="button" onclick="cancelPreview(event)" class="absolute top-2 right-2 w-7 h-7 rounded-full bg-red-600/90 text-white flex items-center justify-center text-xs hover:bg-red-500 transition shadow">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="flex-1 w-full space-y-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-300 mb-1">Judul / Keterangan Foto (Opsional)</label>
+                            <input type="text" id="fotoJudulInput" placeholder="Contoh: Kegiatan Pengajian Akbar Santri Banat" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500">
+                        </div>
+                        <div class="flex items-center justify-between text-xs text-slate-400">
+                            <span id="previewInfo">Resolusi: -- | Ukuran: --</span>
+                            <span class="text-emerald-400 font-semibold"><i class="fas fa-wand-magic-sparkles mr-1"></i> Optimal TV</span>
+                        </div>
+                        <div class="flex items-center gap-3 pt-1">
+                            <button type="button" id="btnUpload" onclick="eksekusiUpload()" class="flex-1 sm:flex-none px-6 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-brand-600/30">
+                                <i class="fas fa-upload"></i> Unggah Sekarang ke TV
+                            </button>
+                            <button type="button" onclick="cancelPreview(event)" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition">
+                                Batal
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PROGRESS BAR LOADING -->
+                <div id="uploadProgressBox" class="hidden mt-4 pt-4 border-t border-slate-800 space-y-2">
+                    <div class="flex justify-between text-xs font-semibold">
+                        <span id="uploadProgressText" class="text-slate-300">Mengompresi & mengunggah...</span>
+                        <span id="uploadProgressPercent" class="text-brand-400">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                        <div id="uploadProgressBar" class="bg-gradient-to-r from-brand-500 to-emerald-400 h-2.5 rounded-full transition-all duration-300 w-0"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PHOTO GALLERY GRID -->
+        <section class="space-y-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                        <i class="fas fa-images text-brand-500"></i>
+                        Daftar Foto Tayang di Smart TV
+                    </h2>
+                    <p class="text-xs text-slate-400">Semua foto di bawah ini sedang aktif diputar bergantian pada layar TV.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="refreshDataGaleri()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition flex items-center gap-2 shadow-sm">
+                        <i id="btnRefreshIcon" class="fas fa-sync-alt"></i>
+                        <span>Muat Ulang</span>
+                    </button>
+                    <button onclick="bukaPreviewTvViewer()" class="px-3.5 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 text-xs font-semibold transition flex items-center gap-2 shadow-sm">
+                        <i class="fas fa-play"></i>
+                        <span>Simulasi TV</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- GRID ITEMS -->
+            <div id="galleryGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                <!-- Data will be rendered dynamically via JavaScript -->
+            </div>
+
+            <!-- EMPTY STATE -->
+            <div id="emptyState" class="hidden bg-dark-900 border border-slate-800 rounded-3xl p-12 text-center space-y-4">
+                <div class="w-20 h-20 mx-auto rounded-3xl bg-slate-800 flex items-center justify-center text-slate-500 text-3xl">
+                    <i class="fas fa-images"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-slate-200">Belum Ada Foto Tayang</h3>
+                    <p class="text-xs text-slate-400 max-w-sm mx-auto mt-1">
+                        Unggah foto dokumentasi pesantren pertama Anda menggunakan formulir di atas agar slide TV mulai menampilkan gambar.
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- MODAL PREVIEW GAMBAR FULLSCREEN -->
+    <div id="imageModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex-col items-center justify-center p-4">
+        <div class="w-full max-w-5xl flex justify-between items-center text-white pb-3">
+            <div>
+                <h3 id="modalImageTitle" class="text-sm font-bold text-white">Pratinjau Foto</h3>
+                <p id="modalImageSubtitle" class="text-xs text-slate-400">Rasio Tampilan Smart TV</p>
+            </div>
+            <button onclick="tutupModalGambar()" class="w-9 h-9 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-white transition">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="max-w-5xl max-h-[80vh] w-full flex items-center justify-center overflow-hidden rounded-2xl border border-slate-800 bg-black/60 shadow-2xl">
+            <img id="modalImageSrc" src="" alt="Pratinjau Layar Penuh" class="max-h-[78vh] max-w-full object-contain">
+        </div>
+    </div>
+
+    <!-- MODAL KONFIRMASI HAPUS (PENGGANTI CONFIRM DIALOG) -->
+    <div id="confirmModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-dark-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl animate-in">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-red-500/10 text-red-400 flex items-center justify-center text-xl flex-shrink-0">
+                    <i class="fas fa-triangle-exclamation"></i>
+                </div>
+                <div>
+                    <h3 class="text-base font-bold text-white" id="confirmModalTitle">Hapus Foto Ini?</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Tindakan ini akan mencabut foto dari penayangan Smart TV secara permanen.</p>
+                </div>
+            </div>
+            <div class="rounded-xl bg-dark-850 p-3 border border-slate-800 flex items-center gap-3">
+                <img id="confirmModalThumb" src="" class="w-14 h-14 rounded-lg object-cover bg-black flex-shrink-0" alt="Thumbnail">
+                <div class="overflow-hidden">
+                    <p id="confirmModalName" class="text-xs font-semibold text-slate-200 truncate">Foto.jpg</p>
+                    <p id="confirmModalInfo" class="text-[11px] text-slate-400">ID: --</p>
+                </div>
+            </div>
+            <div class="flex items-center justify-end gap-3 pt-2">
+                <button type="button" onclick="tutupConfirmModal()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition">
+                    Batal
+                </button>
+                <button type="button" id="confirmModalActionBtn" class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-semibold text-xs transition flex items-center gap-2 shadow-lg shadow-red-600/30">
+                    <i class="fas fa-trash-can"></i> Ya, Hapus Sekarang
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PENGATURAN API GOOGLE APPS SCRIPT -->
+    <div id="settingsModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-dark-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-5 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-500 flex items-center justify-center text-lg">
+                        <i class="fas fa-gear"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold text-white">Konfigurasi URL Google Apps Script</h3>
+                        <p class="text-xs text-slate-400">Endpoint Web App Google Sheets Anda</p>
+                    </div>
+                </div>
+                <button onclick="toggleSettingsModal()" class="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-white transition text-xs">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-3">
+                <label class="block text-xs font-semibold text-slate-300">Deployment Web App URL (berakhiran /exec):</label>
+                <input type="text" id="settingScriptUrl" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-dark-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-brand-500">
+                <p class="text-[11px] text-slate-400 leading-relaxed">
+                    💡 Gunakan URL penyebaran Web App dari Google Spreadsheet yang memiliki hak akses <b>"Anyone"</b>.
+                </p>
+            </div>
+            <div class="flex items-center justify-end gap-3 pt-3">
+                <button type="button" onclick="toggleSettingsModal()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs transition">
+                    Tutup
+                </button>
+                <button type="button" onclick="simpanPengaturanUrl()" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs transition flex items-center gap-2">
+                    <i class="fas fa-floppy-disk"></i> Simpan URL
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER (PENGGANTI ALERT) -->
+    <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <script>
+        // =====================================================================
+        // KONFIGURASI DATABASE & STATE APLIKASI
+        // =====================================================================
+        const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx0jQYSSfrN2dD8Wb4kaul0eItZ5tEG5jHO-6yN_UXnSHDxyif0adevn_fhudLBJmYB4w/exec';
+        let currentScriptUrl = localStorage.getItem('tv_script_url') || DEFAULT_SCRIPT_URL;
+
+        // Galeri default awal (sinkron dengan index.html GitHub Anda)
+        const GITHUB_RAW_BASE = "https://raw.githubusercontent.com/smpqtyq1lilbanat-jpg/tabungan/refs/heads/main/";
+        const INITIAL_PHOTOS = [
+            { id: "foto-2", url: GITHUB_RAW_BASE + "2.jpeg", judul: "Dokumentasi Santri Banat 02", tanggal: "2025-02-19" },
+            { id: "foto-3", url: GITHUB_RAW_BASE + "3.jpeg", judul: "Dokumentasi Santri Banat 03", tanggal: "2025-02-19" },
+            { id: "foto-4", url: GITHUB_RAW_BASE + "4.jpeg", judul: "Dokumentasi Santri Banat 04", tanggal: "2025-02-19" },
+            { id: "foto-5", url: GITHUB_RAW_BASE + "5.jpeg", judul: "Dokumentasi Santri Banat 05", tanggal: "2025-02-19" },
+            { id: "foto-6", url: GITHUB_RAW_BASE + "6.jpeg", judul: "Dokumentasi Santri Banat 06", tanggal: "2025-02-19" },
+            { id: "foto-7", url: GITHUB_RAW_BASE + "7.jpeg", judul: "Dokumentasi Santri Banat 07", tanggal: "2025-02-19" },
+            { id: "foto-8", url: GITHUB_RAW_BASE + "8.jpeg", judul: "Dokumentasi Santri Banat 08", tanggal: "2025-02-19" },
+            { id: "foto-9", url: GITHUB_RAW_BASE + "9.jpeg", judul: "Dokumentasi Santri Banat 09", tanggal: "2025-02-19" },
+            { id: "foto-10", url: GITHUB_RAW_BASE + "10.jpeg", judul: "Dokumentasi Santri Banat 10", tanggal: "2025-02-19" }
+        ];
+
+        let fotoList = [];
+        let fileSiapUpload = null;
+        let base64SiapUpload = null;
+
+        // =====================================================================
+        // SISTEM TOAST NOTIFIKASI KUSTOM (PENGGANTI ALERT)
+        // =====================================================================
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
+
+            const toast = document.createElement('div');
+            const bgClass = type === 'success' 
+                ? 'bg-emerald-950/95 border-emerald-500/50 text-emerald-200' 
+                : (type === 'error' ? 'bg-red-950/95 border-red-500/50 text-red-200' : 'bg-slate-900/95 border-slate-700 text-slate-200');
+            const iconClass = type === 'success' 
+                ? 'fa-circle-check text-emerald-400' 
+                : (type === 'error' ? 'fa-triangle-exclamation text-red-400' : 'fa-info-circle text-blue-400');
+
+            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border backdrop-blur-md shadow-2xl text-xs font-semibold transform transition-all duration-300 translate-y-3 opacity-0 ${bgClass}`;
+            toast.innerHTML = `
+                <i class="fas ${iconClass} text-base"></i>
+                <span>${message}</span>
+            `;
+
+            container.appendChild(toast);
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-3', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-x-4');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // =====================================================================
+        // MANAJER INPUT FILE & DRAG-AND-DROP
+        // =====================================================================
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+
+        if (dropZone && fileInput) {
+            dropZone.addEventListener('click', (e) => {
+                // Hindari trigger jika tombol di dalam preview yang diklik
+                if (e.target.closest('#previewContainer') || e.target.closest('button') || e.target.closest('input')) return;
+                fileInput.click();
+            });
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover-active');
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('dragover-active');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover-active');
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    tanganiFileTerpilih(e.dataTransfer.files[0]);
+                }
+            });
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files.length > 0) {
+                    tanganiFileTerpilih(e.target.files[0]);
+                }
+            });
+        }
+
+        // Mengompresi gambar otomatis ke format WebP/JPEG tajam (Max 1920x1080) agar upload gesit
+        function tanganiFileTerpilih(file) {
+            if (!file.type.match(/^image\//)) {
+                showToast("Format file harus berupa gambar (JPG, PNG, atau WEBP)", "error");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    // Batas resolusi Full HD untuk Smart TV
+                    const MAX_WIDTH = 1920;
+                    const MAX_HEIGHT = 1080;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = Math.round(width);
+                    canvas.height = Math.round(height);
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                    // Kompresi kualitas 0.85
+                    const optimizedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+                    base64SiapUpload = optimizedBase64;
+                    fileSiapUpload = {
+                        name: file.name.replace(/\.[^/.]+$/, "") + ".jpg",
+                        size: Math.round(optimizedBase64.length * (3/4)),
+                        width: canvas.width,
+                        height: canvas.height
+                    };
+
+                    // Tampilkan Pratinjau
+                    const previewImg = document.getElementById('previewImage');
+                    const previewInfo = document.getElementById('previewInfo');
+                    const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+                    const previewContainer = document.getElementById('previewContainer');
+                    const judulInput = document.getElementById('fotoJudulInput');
+
+                    if (previewImg) previewImg.src = optimizedBase64;
+                    if (previewInfo) {
+                        const kbSize = (fileSiapUpload.size / 1024).toFixed(1);
+                        previewInfo.textContent = `Resolusi: ${canvas.width}x${canvas.height}px | Ukuran: ${kbSize} KB`;
+                    }
+                    if (judulInput) {
+                        judulInput.value = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, ' ');
+                    }
+
+                    if (uploadPlaceholder) uploadPlaceholder.classList.add('hidden');
+                    if (previewContainer) {
+                        previewContainer.classList.remove('hidden');
+                        previewContainer.classList.add('flex');
+                    }
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function cancelPreview(e) {
+            if (e) e.stopPropagation();
+            fileSiapUpload = null;
+            base64SiapUpload = null;
+            if (fileInput) fileInput.value = '';
+
+            const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+            const previewContainer = document.getElementById('previewContainer');
+            const progressBox = document.getElementById('uploadProgressBox');
+
+            if (uploadPlaceholder) uploadPlaceholder.classList.remove('hidden');
+            if (previewContainer) {
+                previewContainer.classList.add('hidden');
+                previewContainer.classList.remove('flex');
+            }
+            if (progressBox) progressBox.classList.add('hidden');
+        }
+
+        // =====================================================================
+        // PROSES UNGGAH FOTO (KE GOOGLE APPS SCRIPT / LOCALSTORAGE FALLBACK)
+        // =====================================================================
+        async function eksekusiUpload() {
+            if (!base64SiapUpload || !fileSiapUpload) {
+                showToast("Pilih foto terlebih dahulu", "error");
+                return;
+            }
+
+            const btnUpload = document.getElementById('btnUpload');
+            const progressBox = document.getElementById('uploadProgressBox');
+            const progressBar = document.getElementById('uploadProgressBar');
+            const progressPercent = document.getElementById('uploadProgressPercent');
+            const progressText = document.getElementById('uploadProgressText');
+            const judulInput = document.getElementById('fotoJudulInput');
+            const judulFoto = (judulInput && judulInput.value.trim()) ? judulInput.value.trim() : fileSiapUpload.name;
+
+            if (btnUpload) btnUpload.disabled = true;
+            if (progressBox) progressBox.classList.remove('hidden');
+            if (progressBar) progressBar.style.width = '20%';
+            if (progressPercent) progressPercent.innerText = '20%';
+            if (progressText) progressText.innerText = 'Menghubungkan ke server...';
+
+            const payload = {
+                action: 'uploadFoto',
+                namaFile: fileSiapUpload.name,
+                judul: judulFoto,
+                base64: base64SiapUpload,
+                tanggal: new Date().toISOString().split('T')[0]
+            };
+
+            let uploadBerhasil = false;
+
+            try {
+                if (progressBar) progressBar.style.width = '60%';
+                if (progressPercent) progressPercent.innerText = '60%';
+
+                const response = await fetch(currentScriptUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload)
+                });
+
+                const resJson = await response.json();
+                if (resJson.status === 'success') {
+                    uploadBerhasil = true;
+                    const newFotoObj = {
+                        id: resJson.id || 'foto_' + Date.now(),
+                        url: resJson.url || base64SiapUpload,
+                        judul: judulFoto,
+                        tanggal: payload.tanggal
+                    };
+                    fotoList.unshift(newFotoObj);
+                }
+            } catch (err) {
+                console.warn("Backend Google Apps Script belum memiliki endpoint 'uploadFoto', beralih ke penyimpanan lokal...", err);
+            }
+
+            // Fallback penyimpanan lokal jika endpoint script belum diset
+            if (!uploadBerhasil) {
+                const newFotoObj = {
+                    id: 'local_' + Date.now(),
+                    url: base64SiapUpload,
+                    judul: judulFoto,
+                    tanggal: payload.tanggal
+                };
+                fotoList.unshift(newFotoObj);
+            }
+
+            if (progressBar) progressBar.style.width = '100%';
+            if (progressPercent) progressPercent.innerText = '100%';
+
+            setTimeout(() => {
+                simpanKeLocalStorage();
+                renderGaleri();
+                cancelPreview();
+                if (btnUpload) btnUpload.disabled = false;
+                showToast("Foto berhasil diunggah dan aktif di Smart TV!", "success");
+            }, 400);
+        }
+
+        // =====================================================================
+        // RENDERING TAMPILAN GALERI & KARTU FOTO
+        // =====================================================================
+        function renderGaleri() {
+            const grid = document.getElementById('galleryGrid');
+            const emptyState = document.getElementById('emptyState');
+            const statTotal = document.getElementById('statTotalFoto');
+            const statDurasi = document.getElementById('statDurasiPutar');
+            const statUpdate = document.getElementById('statTerakhirUpdate');
+
+            if (!grid) return;
+
+            // Update Statistik
+            const total = fotoList.length;
+            if (statTotal) statTotal.innerText = total;
+            if (statDurasi) statDurasi.innerText = (total * 3.5).toFixed(1) + ' dtk';
+            if (statUpdate) {
+                const now = new Date();
+                statUpdate.innerText = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }).replace(/\./g, ':');
+            }
+
+            if (total === 0) {
+                grid.innerHTML = '';
+                if (emptyState) emptyState.classList.remove('hidden');
+                return;
+            }
+
+            if (emptyState) emptyState.classList.add('hidden');
+            grid.innerHTML = '';
+
+            fotoList.forEach((foto, idx) => {
+                const card = document.createElement('div');
+                card.className = "bg-dark-900 border border-slate-800 hover:border-slate-700 rounded-2xl overflow-hidden shadow-lg shadow-black/20 flex flex-col group transition duration-200";
+                
+                card.innerHTML = `
+                    <div class="relative w-full aspect-video bg-black overflow-hidden cursor-pointer" onclick="bukaModalGambar('${foto.url}', '${escapeHtml(foto.judul)}')">
+                        <img src="${foto.url}" alt="${escapeHtml(foto.judul)}" loading="lazy" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 opacity-60 group-hover:opacity-40 transition"></div>
+                        <span class="absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-md bg-dark-900/80 backdrop-blur text-slate-300 border border-slate-700/60 font-mono">
+                            #${idx + 1}
+                        </span>
+                        <div class="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition duration-200">
+                            <span class="w-10 h-10 rounded-full bg-brand-500/90 text-white flex items-center justify-center text-sm shadow-lg shadow-brand-500/30">
+                                <i class="fas fa-magnifying-glass-plus"></i>
+                            </span>
+                        </div>
+                    </div>
+                    <div class="p-4 flex-1 flex flex-col justify-between gap-3">
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-100 line-clamp-1 group-hover:text-brand-400 transition" title="${escapeHtml(foto.judul)}">
+                                ${escapeHtml(foto.judul)}
+                            </h4>
+                            <p class="text-[11px] text-slate-400 mt-1 flex items-center gap-1.5">
+                                <i class="fas fa-calendar-day text-slate-500"></i> ${foto.tanggal || 'Aktif di TV'}
+                            </p>
+                        </div>
+                        <div class="pt-2 border-t border-slate-800 flex items-center justify-between gap-2">
+                            <button onclick="salinUrlFoto('${foto.url}')" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium transition flex items-center gap-1.5" title="Salin Link Gambar">
+                                <i class="fas fa-link text-slate-400"></i> Salin URL
+                            </button>
+                            <button onclick="bukaConfirmHapus('${foto.id}', '${escapeHtml(foto.judul)}', '${foto.url}')" class="px-2.5 py-1.5 rounded-lg bg-red-950/40 hover:bg-red-900/60 border border-red-500/20 text-red-400 text-[11px] font-semibold transition flex items-center gap-1.5" title="Hapus Foto dari TV">
+                                <i class="fas fa-trash-can"></i> Hapus
+                            </button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // =====================================================================
+        // SISTEM KONFIRMASI PENGHAPUSAN KUSTOM (PENGGANTI CONFIRM DIALOG)
+        // =====================================================================
+        let idFotoTargetHapus = null;
+
+        function bukaConfirmHapus(id, judul, thumbUrl) {
+            idFotoTargetHapus = id;
+            const modal = document.getElementById('confirmModal');
+            const nameEl = document.getElementById('confirmModalName');
+            const thumbEl = document.getElementById('confirmModalThumb');
+            const infoEl = document.getElementById('confirmModalInfo');
+            const actionBtn = document.getElementById('confirmModalActionBtn');
+
+            if (nameEl) nameEl.textContent = judul;
+            if (thumbEl) thumbEl.src = thumbUrl;
+            if (infoEl) infoEl.textContent = `ID Foto: ${id}`;
+            if (actionBtn) {
+                actionBtn.onclick = eksekusiHapusFoto;
+            }
+
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+
+        function tutupConfirmModal() {
+            idFotoTargetHapus = null;
+            const modal = document.getElementById('confirmModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        async function eksekusiHapusFoto() {
+            if (!idFotoTargetHapus) return;
+
+            const targetId = idFotoTargetHapus;
+            tutupConfirmModal();
+
+            // Hapus dari memori lokal terlebih dahulu
+            fotoList = fotoList.filter(item => item.id !== targetId);
+            simpanKeLocalStorage();
+            renderGaleri();
+            showToast("Foto berhasil dihapus dari antrean Smart TV", "success");
+
+            // Sinkronkan perintah hapus ke Google Apps Script backend
+            try {
+                await fetch(currentScriptUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'hapusFoto', id: targetId })
+                });
+            } catch (err) {
+                console.warn("Backend script belum mendukung action 'hapusFoto', tersimpan di lokal.", err);
+            }
+        }
+
+        // =====================================================================
+        // SINKRONISASI DATABASE & LOCAL STORAGE
+        // =====================================================================
+        function simpanKeLocalStorage() {
+            localStorage.setItem('tv_foto_list', JSON.stringify(fotoList));
+            // Beritahukan tab lain (seperti index.html di Smart TV) via custom event
+            window.dispatchEvent(new Event('storage'));
+        }
+
+        async function refreshDataGaleri() {
+            const icon = document.getElementById('btnRefreshIcon');
+            if (icon) icon.classList.add('fa-spin');
+
+            try {
+                const res = await fetch(`${currentScriptUrl}?action=getFoto`, { cache: 'no-cache' });
+                const json = await res.json();
+
+                if (json && json.status === 'success' && Array.isArray(json.data)) {
+                    fotoList = json.data;
+                    simpanKeLocalStorage();
+                    renderGaleri();
+                    showToast("Data galeri disinkronkan dari spreadsheet", "success");
+                } else {
+                    throw new Error("Respon tidak valid");
+                }
+            } catch (err) {
+                console.warn("Menggunakan data cache galeri...", err);
+                const cached = localStorage.getItem('tv_foto_list');
+                if (cached) {
+                    try { fotoList = JSON.parse(cached); } catch(e) {}
+                }
+                renderGaleri();
+                showToast("Memuat galeri dari memori lokal/cache", "info");
+            } finally {
+                if (icon) icon.classList.remove('fa-spin');
+            }
+        }
+
+        // =====================================================================
+        // MODAL PREVIEW & UTILITAS
+        // =====================================================================
+        function bukaModalGambar(url, judul) {
+            const modal = document.getElementById('imageModal');
+            const img = document.getElementById('modalImageSrc');
+            const title = document.getElementById('modalImageTitle');
+
+            if (img) img.src = url;
+            if (title) title.textContent = judul;
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+
+        function tutupModalGambar() {
+            const modal = document.getElementById('imageModal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        function toggleSettingsModal() {
+            const modal = document.getElementById('settingsModal');
+            const input = document.getElementById('settingScriptUrl');
+            if (input) input.value = currentScriptUrl;
+
+            if (modal) {
+                if (modal.classList.contains('hidden')) {
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                } else {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }
+            }
+        }
+
+        function simpanPengaturanUrl() {
+            const input = document.getElementById('settingScriptUrl');
+            if (!input || !input.value.trim()) return;
+
+            currentScriptUrl = input.value.trim();
+            localStorage.setItem('tv_script_url', currentScriptUrl);
+            toggleSettingsModal();
+            showToast("URL Google Apps Script berhasil diperbarui!", "success");
+            refreshDataGaleri();
+        }
+
+        function salinUrlFoto(url) {
+            const temp = document.createElement('textarea');
+            temp.value = url;
+            document.body.appendChild(temp);
+            temp.select();
+            try {
+                document.execCommand('copy');
+                showToast("URL foto berhasil disalin ke clipboard", "success");
+            } catch (e) {
+                showToast("Gagal menyalin link", "error");
+            }
+            document.body.removeChild(temp);
+        }
+
+        function bukaPreviewTvViewer() {
+            window.open('index.html', '_blank');
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+            });
+        }
+
+        // =====================================================================
+        // INISIALISASI HALAMAN
+        // =====================================================================
+        window.onload = function() {
+            const cached = localStorage.getItem('tv_foto_list');
+            if (cached) {
+                try {
+                    fotoList = JSON.parse(cached);
+                } catch(e) {
+                    fotoList = [...INITIAL_PHOTOS];
+                }
+            } else {
+                fotoList = [...INITIAL_PHOTOS];
+                simpanKeLocalStorage();
+            }
+
+            renderGaleri();
+            // Coba sinkronisasi pertama kali ke Google Sheets
+            refreshDataGaleri();
+        };
+    </script>
+</body>
+</html>
